@@ -3,21 +3,21 @@ import {
   Zap, ArrowRight, Globe, Package, Star, Truck, Shield, 
   Phone, Mail, Search
 } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
-import { companyInfo, products, productCategories, brands } from '../data/company'
+import { useState, useEffect, useRef } from 'react'
+import { companyInfo, topCategories, productsByCategory, allProducts, brands, type Product } from '../data/company'
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<typeof products>([])
+  const [searchResults, setSearchResults] = useState<Product[]>([])
   const [searchOpen, setSearchOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate?.() || (() => {})
+  const navigate = useNavigate()
 
-  const hotProducts = products.slice(0, 4)
-
+  // Search effect
   useEffect(() => {
     if (searchQuery.trim()) {
-      const results = products.filter(p => 
+      const results = allProducts.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.nameEn.toLowerCase().includes(searchQuery.toLowerCase())
       ).slice(0, 8)
@@ -31,13 +31,24 @@ export default function HomePage() {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/products?search=${encodeURIComponent(searchQuery)}`)
+      setSearchOpen(false)
     }
   }
+
+  // Get products for current tab
+  const getProductsForTab = (tabId: number) => {
+    if (tabId === 0) {
+      return productsByCategory[0] || []
+    }
+    return productsByCategory[tabId] || []
+  }
+
+  const currentProducts = getProductsForTab(activeTab)
 
   return (
     <div className="bg-white">
       {/* Hero */}
-      <section className="bg-gradient-to-r from-blue-900 to-slate-900 py-20">
+      <section className="bg-gradient-to-r from-blue-900 to-slate-900 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
@@ -124,49 +135,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Product Categories</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-            {productCategories.map((cat) => (
-              <Link
+      {/* Category Tabs - JD Style */}
+      <section className="bg-white border-b border-gray-200 sticky top-16 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center overflow-x-auto scrollbar-hide">
+            {topCategories.map((cat) => (
+              <button
                 key={cat.id}
-                to={`/products?category=${cat.id}`}
-                className="bg-white rounded-xl p-4 text-center shadow-sm hover:shadow-md transition border border-gray-200"
+                onClick={() => setActiveTab(cat.id)}
+                className={`flex items-center gap-2 px-6 py-4 border-b-2 whitespace-nowrap transition-colors ${
+                  activeTab === cat.id
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
               >
-                <div className="text-2xl mb-2">{cat.icon}</div>
-                <div className="font-medium text-gray-900 text-sm">{cat.name}</div>
-              </Link>
+                <span>{cat.icon}</span>
+                <span className="font-medium">{cat.name}</span>
+              </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Hot Products */}
-      <section className="py-12">
+      {/* Products Grid by Category */}
+      <section className="py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">Hot Products</h2>
-            <Link to="/top-deals" className="text-blue-600 hover:text-blue-700 flex items-center gap-1">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {topCategories.find(c => c.id === activeTab)?.name || 'Products'}
+            </h2>
+            <Link 
+              to={`/products${activeTab !== 0 ? `?category=${activeTab}` : ''}`} 
+              className="text-blue-600 hover:text-blue-700 flex items-center gap-1"
+            >
               View All <ArrowRight size={16} />
             </Link>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {hotProducts.map((product) => (
+          
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {currentProducts.map((product) => (
               <Link
                 key={product.id}
                 to={`/product/${product.id}`}
-                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-200"
+                className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100 group"
               >
-                <div className="aspect-square bg-gray-100">
-                  <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                <div className="aspect-square bg-gray-100 overflow-hidden">
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform" 
+                  />
                 </div>
-                <div className="p-4">
-                  <div className="text-sm text-gray-500 mb-1">{product.categoryName}</div>
-                  <h3 className="font-medium text-gray-900 mb-2 truncate">{product.name}</h3>
+                <div className="p-3">
+                  <div className="text-xs text-blue-600 mb-1">{product.categoryName}</div>
+                  <h3 className="font-medium text-gray-900 text-sm mb-2 line-clamp-2">{product.name}</h3>
+                  <div className="flex items-center gap-1 mb-2">
+                    <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                    <span className="text-xs text-gray-500">{product.rating}</span>
+                  </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-lg font-bold text-blue-600">${product.price}</span>
+                    <span className="text-lg font-bold text-red-600">${product.price}</span>
+                    {product.originalPrice && (
+                      <span className="text-xs text-gray-400 line-through">${product.originalPrice}</span>
+                    )}
                   </div>
                 </div>
               </Link>
@@ -175,23 +206,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Brands */}
-      <section className="py-12 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Popular Brands</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {brands.map((brand) => (
-              <Link
-                key={brand.id}
-                to={`/products?brand=${brand.id}`}
-                className="bg-white rounded-xl p-4 flex items-center justify-center shadow-sm border border-gray-200 hover:shadow-md transition"
-              >
-                <img src={brand.logo} alt={brand.name} className="h-8" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* Why Choose Us */}
       <section className="py-12">
@@ -216,21 +230,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Contact Banner */}
-      <section className="py-12 bg-blue-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">Ready to get started?</h2>
-          <p className="text-blue-100 mb-6">Contact us today for a free quote on elevator parts</p>
-          <div className="flex justify-center gap-4">
-            <Link to="/contact" className="bg-white text-blue-600 px-6 py-3 rounded-lg font-medium hover:bg-gray-100">
-              Contact Us
-            </Link>
-            <a href={`mailto:${companyInfo.email}`} className="border border-white text-white px-6 py-3 rounded-lg font-medium hover:bg-white/10">
-              {companyInfo.email}
-            </a>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

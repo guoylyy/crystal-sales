@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
-import { products as allProducts, type Product } from '../data/company'
+import { allProducts, type Product } from '../data/company'
 
 interface CartItem {
   product: Product

@@ -1,13 +1,12 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Link, useSearchParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { Search, Filter, Grid, List, ArrowRight, Loader } from 'lucide-react'
-import { products as mockProducts, productCategories, type Product } from '../data/company'
-import { getProductPaged, getCategories } from '../api'
+import { topCategories, productsByCategory, type Product } from '../data/company'
+import { getProductPaged } from '../api'
 import { useStore } from '../context/StoreContext'
 
 export default function ProductsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
-  const navigate = useNavigate()
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '')
   const [categoryFilter, setCategoryFilter] = useState<number | null>(
@@ -16,41 +15,37 @@ export default function ProductsPage() {
   const [showCartMsg, setShowCartMsg] = useState(false)
   const [loading, setLoading] = useState(false)
   const [products, setProducts] = useState<Product[]>([])
-  const { addToCart, cart } = useStore()
+  const { addToCart } = useStore()
 
-  // Fetch products from API
+  // Fetch products from API or use local data
   useEffect(() => {
     setLoading(true)
-    async function fetchProducts() {
-      try {
-        const params: any = { page: 1, pageSize: 50 }
-        if (categoryFilter) params.categoryId = categoryFilter
-        if (searchQuery) params.keyword = searchQuery
-        
-        const res = await getProductPaged(params)
-        setProducts(res.list || [])
-      } catch (e) {
-        // Fallback to mock
-        let filtered = [...mockProducts]
-        if (categoryFilter) filtered = filtered.filter(p => p.categoryId === categoryFilter)
-        if (searchQuery) {
-          const k = searchQuery.toLowerCase()
-          filtered = filtered.filter(p => 
-            p.name.toLowerCase().includes(k) || 
-            p.nameEn.toLowerCase().includes(k)
-          )
-        }
-        setProducts(filtered)
-      } finally {
-        setLoading(false)
-      }
+    
+    // Use local data based on category
+    let filtered: Product[] = []
+    
+    if (searchQuery) {
+      // Search across all products
+      const allProds = Object.values(productsByCategory).flat()
+      filtered = allProds.filter(p => 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.nameEn.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    } else if (categoryFilter !== null) {
+      filtered = productsByCategory[categoryFilter] || []
+    } else {
+      // All products
+      filtered = Object.values(productsByCategory).flat()
     }
-    fetchProducts()
+    
+    setProducts(filtered)
+    setLoading(false)
   }, [searchParams.toString()])
 
   const handleCategoryChange = (catId: number | null) => {
     setCategoryFilter(catId)
-    if (catId) {
+    setSearchQuery('')
+    if (catId !== null) {
       setSearchParams({ category: catId.toString() })
     } else {
       setSearchParams({})
@@ -72,7 +67,7 @@ export default function ProductsPage() {
     setTimeout(() => setShowCartMsg(false), 2000)
   }
 
-  const category = categoryFilter ? productCategories.find(c => c.id === categoryFilter) : null
+  const category = categoryFilter !== null ? topCategories.find(c => c.id === categoryFilter) : null
 
   return (
     <div className="bg-gray-50">
@@ -80,7 +75,7 @@ export default function ProductsPage() {
       <div className="bg-gradient-to-r from-blue-900 to-slate-900 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold text-white mb-2">
-            {category ? category.name : 'All Products'}
+            {category ? category.name : searchQuery ? `Search: ${searchQuery}` : 'All Products'}
           </h1>
           <p className="text-gray-300">
             {loading ? 'Loading...' : `${products.length} products found`}
@@ -90,7 +85,7 @@ export default function ProductsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
+          {/* Sidebar - Category Filter */}
           <aside className="lg:w-64 flex-shrink-0">
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 sticky top-24">
               {/* Search */}
@@ -115,25 +110,25 @@ export default function ProductsPage() {
               <div className="space-y-1">
                 <button
                   onClick={() => handleCategoryChange(null)}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
-                    !categoryFilter 
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm transition flex items-center gap-2 ${
+                    categoryFilter === null 
                       ? 'bg-blue-50 text-blue-600' 
                       : 'text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  All Products
+                  <span>📦</span> All Products
                 </button>
-                {productCategories.map((cat) => (
+                {topCategories.filter(c => c.id !== 0).map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => handleCategoryChange(cat.id)}
-                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm transition flex items-center gap-2 ${
                       categoryFilter === cat.id
                         ? 'bg-blue-50 text-blue-600'
                         : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    {cat.name}
+                    <span>{cat.icon}</span> {cat.name}
                   </button>
                 ))}
               </div>
@@ -182,7 +177,7 @@ export default function ProductsPage() {
                 </button>
               </div>
             ) : viewMode === 'grid' ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {products.map((product) => (
                   <div key={product.id} className="bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition border border-gray-200">
                     <Link to={`/product/${product.id}`}>
@@ -193,17 +188,16 @@ export default function ProductsPage() {
                     <div className="p-4">
                       <div className="text-sm text-blue-600 mb-1">{product.categoryName}</div>
                       <Link to={`/product/${product.id}`}>
-                        <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600">{product.name}</h3>
+                        <h3 className="font-semibold text-gray-900 mb-2 hover:text-blue-600 line-clamp-2">{product.name}</h3>
                       </Link>
                       <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
                       <div className="flex items-center justify-between mb-3">
                         <div>
-                          <span className="text-xl font-bold text-gray-900">${product.price}</span>
+                          <span className="text-xl font-bold text-red-600">${product.price}</span>
                           {product.originalPrice && (
                             <span className="text-sm text-gray-400 line-through ml-2">${product.originalPrice}</span>
                           )}
                         </div>
-                        <span className="text-sm text-gray-500">MOQ: {product.moq}</span>
                       </div>
                       <button 
                         onClick={() => handleAddToCart(product)}
@@ -230,7 +224,7 @@ export default function ProductsPage() {
                       <p className="text-gray-600 text-sm mb-3">{product.description}</p>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <span className="text-lg font-bold text-gray-900">${product.price}</span>
+                          <span className="text-lg font-bold text-red-600">${product.price}</span>
                           <span className="text-sm text-gray-500">MOQ: {product.moq}</span>
                         </div>
                         <button 

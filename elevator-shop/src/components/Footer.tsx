@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Mail, Phone, MapPin, Globe } from 'lucide-react'
-import { companyInfo, productCategories } from '../data/company'
+import { companyInfo, topCategories } from '../data/company'
 
 const footerLinks = {
-  products: productCategories.map(c => ({ name: c.name, path: `/products?category=${c.id}` })),
+  products: topCategories.map(c => ({ name: c.name, path: `/products?category=${c.id}` })),
 }
 
 export default function Footer() {

@@ -1,4 +1,4 @@
-import { products as mockProducts, productCategories, type Product } from '../data/company'
+import { allProducts, type Product } from '../data/company'
 
 // Simulating Pinia store with React Context would require more setup
 // For simplicity, we'll use a simple store pattern
@@ -10,12 +10,12 @@ interface CartItem {
 
 class ProductStore {
   products: Product[] = []
-  categories = productCategories
+  categories = topCategories
   cart: CartItem[] = []
   loading = false
 
   constructor() {
-    this.products = mockProducts
+    this.products = allProducts
   }
 
   getProducts() {
@@ -27,7 +27,7 @@ class ProductStore {
   }
 
   getProductsByCategory(categoryId: number) {
-    return this.products.filter(p => p.categoryId === categoryId)
+    return this.allProducts.filter(p => p.categoryId === categoryId)
   }
 
   // Cart operations

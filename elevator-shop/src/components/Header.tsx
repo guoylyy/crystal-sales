@@ -2,13 +2,13 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { Search, ShoppingCart, User, Menu, X, Phone, Mail } from 'lucide-react'
 import { useStore } from '../context/StoreContext'
-import { products } from '../data/company'
+import { allProducts } from '../data/company'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchResults, setSearchResults] = useState<typeof products>([])
+  const [searchResults, setSearchResults] = useState<typeof allProducts>([])
   const { cart } = useStore()
   const navigate = useNavigate()
   const location = useLocation()
@@ -19,7 +19,7 @@ export default function Header() {
   // Search effect
   useEffect(() => {
     if (searchQuery.trim()) {
-      const results = products.filter(p => 
+      const results = allProducts.filter(p => 
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.nameEn.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase())

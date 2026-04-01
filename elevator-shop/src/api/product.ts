@@ -113,10 +113,10 @@ function transformCategory(c: any) {
 }
 
 // Mock fallbacks
-import { productCategories } from '../data/company'
+import { topCategories } from '../data/company'
 
 function getMockCategories() {
-  return productCategories.map(c => ({
+  return topCategories.map(c => ({
     id: c.id,
     name: c.name,
     nameEn: c.nameEn,

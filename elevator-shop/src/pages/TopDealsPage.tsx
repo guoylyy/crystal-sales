@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Star, ShoppingCart, Tag } from 'lucide-react'
-import { products } from '../data/company'
+import { productsByCategory } from '../data/company'
 
 export default function TopDealsPage() {
-  const hotProducts = products.slice(0, 6)
+  const hotProducts = Object.values(productsByCategory).flat().slice(0, 6)
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20">

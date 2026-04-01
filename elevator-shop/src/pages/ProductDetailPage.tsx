@@ -4,7 +4,7 @@ import {
   ArrowLeft, Star, CheckCircle, Truck, Shield, Clock, MessageCircle, 
   Share2, Heart, ShoppingCart, Minus, Plus
 } from 'lucide-react'
-import { products, productCategories, type Product } from '../data/company'
+import { productsByCategory, type Product } from '../data/company'
 import { useStore } from '../context/StoreContext'
 
 export default function ProductDetailPage() {
@@ -29,7 +29,7 @@ export default function ProductDetailPage() {
     )
   }
 
-  const category = productCategories.find(c => c.id === product.categoryId)
+  const category = topCategories.find(c => c.id === product.categoryId)
   const relatedProducts = products
     .filter(p => p.categoryId === product.categoryId && p.id !== product.id)
     .slice(0, 3)

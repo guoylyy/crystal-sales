@@ -24,7 +24,7 @@ const pageTitles: Record<string, string> = {
   '/user/quotations': 'My Quotations - Crystal Elevator',
   '/user/quotation/new': 'Request Quote - Crystal Elevator',
   '/user/profile': 'Profile - Crystal Elevator',
-  '/quotation': 'Request Quote - Crystal Elevator',
+  '/quotation': 'Elevator Quote - Crystal Elevator',
 }
 
 // Pages
@@ -45,7 +45,7 @@ import UserDashboard from './pages/UserDashboard'
 import OrderListPage from './pages/OrderListPage'
 import OrderDetailPage from './pages/OrderDetailPage'
 import QuotationsPage from './pages/QuotationsPage'
-import QuotationFormPage from './pages/QuotationFormPage'
+import QuotationPage from './pages/QuotationPage'
 import ProfilePage from './pages/ProfilePage'
 
 function FullElevatorPage() {
@@ -156,9 +156,9 @@ export default function App() {
         <Route path="/user/order/:id" element={<PageWrapper><OrderDetailPage /></PageWrapper>} />
         <Route path="/user/purchased" element={<PageWrapper><PurchasedPage /></PageWrapper>} />
         <Route path="/user/quotations" element={<PageWrapper><QuotationsPage /></PageWrapper>} />
-        <Route path="/user/quotation/new" element={<PageWrapper><QuotationFormPage /></PageWrapper>} />
+        <Route path="/user/quotation/new" element={<PageWrapper><QuotationPage /></PageWrapper>} />
         <Route path="/user/profile" element={<PageWrapper><ProfilePage /></PageWrapper>} />
-        <Route path="/quotation" element={<PageWrapper><QuotationFormPage /></PageWrapper>} />
+        <Route path="/quotation" element={<PageWrapper><QuotationPage /></PageWrapper>} />
       </Routes>
     </>
   )

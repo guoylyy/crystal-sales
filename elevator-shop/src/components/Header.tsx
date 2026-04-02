@@ -60,6 +60,7 @@ export default function Header() {
     { name: 'Products', path: '/products' },
     { name: 'Brands', path: '/brands' },
     { name: 'Top Deals', path: '/top-deals' },
+    { name: 'Quotation', path: '/quotation' },
     { name: 'Help', path: '/help' },
   ]
 

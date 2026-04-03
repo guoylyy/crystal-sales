@@ -285,14 +285,16 @@ export default function QuotationPage() {
 
   const handleCabinLevelChange = (level: '普通' | '高级' | '豪华') => {
     setCabinLevel(level)
-    // 选中该level的第一个
     const first = CABIN_PRESETS.find(p => p.level === level)
     if (first) {
       setSelections(prev => ({
         ...prev,
         cabinPresetId: first.id,
-        ceilingPresetId: first.defaultCeilingId,
-        floorPresetId: first.defaultFloorId,
+        wallBack: first.wallBack,
+        wallLeft: first.wallLeft,
+        wallRight: first.wallRight,
+        wallFront: first.wallFront,
+        carDoor: first.carDoor,
       }))
     }
   }
@@ -300,11 +302,6 @@ export default function QuotationPage() {
   const handleCabinSelect = (id: string) => {
     const preset = CABIN_PRESETS.find(p => p.id === id)
     if (!preset) return
-    // 自动带入默认吊顶和地板，但保留用户之前的手动选择状态
-    // 只在第一次选择时自动带入默认
-    const currentPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
-    const isFirstSelection = currentPreset?.level !== preset.level
-
     setSelections(prev => ({
       ...prev,
       cabinPresetId: id,
@@ -313,18 +310,16 @@ export default function QuotationPage() {
       wallRight: preset.wallRight,
       wallFront: preset.wallFront,
       carDoor: preset.carDoor,
-      ceilingPresetId: isFirstSelection ? preset.defaultCeilingId : prev.ceilingPresetId,
-      floorPresetId: isFirstSelection ? preset.defaultFloorId : prev.floorPresetId,
     }))
   }
 
   // QuoteSelections 需要加 wallBack/wallLeft/wallRight/wallFront/carDoor 字段
   // 已经在数据层添加了，这里用类型断言处理
-  const wallBack = (selections as any).wallBack ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallBack ?? '201发纹'
-  const wallLeft = (selections as any).wallLeft ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallLeft ?? '201发纹'
-  const wallRight = (selections as any).wallRight ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallRight ?? '201发纹'
-  const wallFront = (selections as any).wallFront ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallFront ?? '201发纹'
-  const carDoor = (selections as any).carDoor ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.carDoor ?? '201发纹'
+  const wallBack = selections.wallBack
+  const wallLeft = selections.wallLeft
+  const wallRight = selections.wallRight
+  const wallFront = selections.wallFront
+  const carDoor = selections.carDoor
 
   const setWall = (key: string, value: string) => {
     setSelections(prev => ({ ...prev, [key]: value } as any))
@@ -471,49 +466,35 @@ export default function QuotationPage() {
 
               {/* 4. 吊顶 */}
               <ImageSelector
-                title="吊顶（跟随轿厢款式，也可自行切换其他）"
+                title="吊顶（如需定制请选择，不选择则跟随轿厢默认）"
                 items={CEILING_PRESETS}
                 selectedId={selections.ceilingPresetId}
                 onSelect={id => update('ceilingPresetId', id)}
               />
-              {ceilingPreset && (
-                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                  <span>跟随轿厢：</span>
-                  <span className="text-blue-500">{cabinPreset?.level ?? ''} {cabinPreset?.label.split('-').pop()}</span>
-                  <span>→</span>
-                  <span className="text-gray-600">{ceilingPreset.label}</span>
-                </div>
-              )}
-              {/* 吊顶备注 */}
-              <div className="mb-4">
-                <textarea
-                  value={(selections as any).ceilingRemarks ?? ''}
-                  onChange={e => update('ceilingRemarks' as any, e.target.value)}
-                  placeholder="吊顶备注..."
-                  rows={1}
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
-                />
+              <div className="text-xs text-gray-400 mb-4">
+                {selections.ceilingPresetId
+                  ? <span className="text-blue-500">已选：{CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)?.label}</span>
+                  : <span>跟随轿厢默认（不加价）</span>
+                }
               </div>
 
               {/* 5. 地板 */}
               <ImageSelector
-                title="地板（跟随轿厢款式，也可自行切换其他）"
+                title="地板（如需定制请选择，不选择则跟随轿厢默认）"
                 items={FLOOR_PRESETS}
                 selectedId={selections.floorPresetId}
                 onSelect={id => update('floorPresetId', id)}
               />
-              {floorPreset && (
-                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
-                  <span>跟随轿厢：</span>
-                  <span className="text-blue-500">{cabinPreset?.level ?? ''} {cabinPreset?.label.split('-').pop()}</span>
-                  <span>→</span>
-                  <span className="text-gray-600">{floorPreset.label}</span>
-                </div>
-              )}
+              <div className="text-xs text-gray-400 mb-4">
+                {selections.floorPresetId
+                  ? <span className="text-blue-500">已选：{FLOOR_PRESETS.find(p => p.id === selections.floorPresetId)?.label}</span>
+                  : <span>跟随轿厢默认（不加价）</span>
+                }
+              </div>
               {/* 地板备注 */}
               <div className="mb-4">
                 <textarea
-                  value={(selections as any).floorRemarks ?? ''}
+                  value={selections.floorRemarks ?? ''}
                   onChange={e => update('floorRemarks' as any, e.target.value)}
                   placeholder="地板备注..."
                   rows={1}

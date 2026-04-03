@@ -15,9 +15,12 @@ import {
   CEILING_PRESETS,
   FLOOR_PRESETS,
   DOOR_PRESETS,
+  COP_PRESETS,
+  LOP_PRESETS,
   DISPLAY_OPTIONS,
   CALLBOX_STYLE_OPTIONS,
   OPTIONAL_ITEMS,
+  DECORATION_MATERIALS,
   BASE_PRICE,
 } from '../data/elevatorQuote'
 
@@ -79,6 +82,63 @@ function SelectButton({
 }
 
 // ============================================================
+// 图片网格选择器
+// ============================================================
+function ImageSelector<T extends { id: string; image: string; label: string; price?: number }>({
+  title,
+  items,
+  selectedId,
+  onSelect,
+}: {
+  title: string
+  items: T[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  return (
+    <div className="mb-5">
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+        {items.map(item => {
+          const selected = item.id === selectedId
+          return (
+            <button
+              key={item.id}
+              onClick={() => onSelect(item.id)}
+              className={`relative rounded-lg overflow-hidden border-2 transition-all text-left ${
+                selected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
+              <div className="aspect-square bg-gray-100">
+                <img
+                  src={item.image}
+                  alt={item.label}
+                  className="w-full h-full object-cover"
+                  onError={e => {
+                    ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23e5e7eb' width='100' height='100'/><text x='50' y='55' text-anchor='middle' fill='%239ca3af' font-size='10'>${item.label}</text></svg>`
+                  }}
+                />
+              </div>
+              <div className="p-1.5 text-center">
+                <div className="text-xs font-medium text-gray-700 leading-tight">{item.label}</div>
+                {(item.price ?? 0) > 0 && (
+                  <div className="text-xs text-orange-500">+¥{(item.price ?? 0).toLocaleString()}</div>
+                )}
+              </div>
+              {selected && (
+                <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
+                  <Check size={10} className="text-white" />
+                </div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // 装潢模块底部：备注 + 参考图片上传
 // ============================================================
 function DecorationModuleFooter({
@@ -99,7 +159,6 @@ function DecorationModuleFooter({
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files) return
-    const newImages: string[] = []
     Array.from(files).forEach(file => {
       const reader = new FileReader()
       reader.onload = ev => {
@@ -117,7 +176,6 @@ function DecorationModuleFooter({
 
   return (
     <div className="border-t border-gray-100 pt-4 mt-4">
-      {/* 自定义需求警告 */}
       {hasCustom && (
         <div className="flex items-center gap-2 mb-3 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
           <AlertTriangle size={14} className="text-orange-500 flex-shrink-0" />
@@ -125,27 +183,22 @@ function DecorationModuleFooter({
         </div>
       )}
 
-      {/* 备注 */}
       <div className="mb-3">
         <label className="block text-xs font-semibold text-gray-600 mb-1">
-          {moduleName}备注（选填，如有特殊需求请在此描述）
+          {moduleName}备注（选填）
         </label>
         <textarea
           value={remarks}
           onChange={e => onRemarksChange(e.target.value)}
-          placeholder={`如：${moduleName}需要特殊颜色、特殊材质、特殊尺寸等...`}
+          placeholder="特殊颜色、材质、尺寸需求..."
           rows={2}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
         />
       </div>
 
-      {/* 参考图片 */}
       <div>
-        <label className="block text-xs font-semibold text-gray-600 mb-1">
-          参考图片（选填，帮助业务员理解您的需求）
-        </label>
+        <label className="block text-xs font-semibold text-gray-600 mb-1">参考图片（选填）</label>
         <div className="flex flex-wrap gap-2 items-start">
-          {/* 已上传图片 */}
           {images.map((img, idx) => (
             <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
               <img src={img} alt={`ref-${idx}`} className="w-full h-full object-cover" />
@@ -157,16 +210,9 @@ function DecorationModuleFooter({
               </button>
             </div>
           ))}
-          {/* 上传按钮 */}
           <label className="w-16 h-16 rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-400 cursor-pointer flex items-center justify-center text-gray-400 hover:text-blue-500 transition">
             <span className="text-xl">+</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleImageUpload}
-            />
+            <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} />
           </label>
         </div>
       </div>
@@ -175,80 +221,7 @@ function DecorationModuleFooter({
 }
 
 // ============================================================
-// 图片网格选择器（用于轿厢/吊顶/地板/门厅）
-// ============================================================
-function ImageSelector<T extends { id: string; image: string; label: string; price: number }>({
-  title,
-  items,
-  selectedId,
-  onSelect,
-  groupBy,
-}: {
-  title: string
-  items: T[]
-  selectedId: string
-  onSelect: (id: string) => void
-  groupBy?: (item: T) => string  // 可选分组
-}) {
-  const groups = groupBy
-    ? [...new Set(items.map(groupBy))].map(g => ({
-        label: g,
-        items: items.filter(i => groupBy(i) === g),
-      }))
-    : [{ label: title, items }]
-
-  return (
-    <div className="mb-5">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
-      {groups.map(group => (
-        <div key={group.label} className="mb-3">
-          {groups.length > 1 && (
-            <div className="text-xs text-gray-400 font-medium mb-1.5">{group.label}</div>
-          )}
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-            {group.items.map(item => {
-              const selected = item.id === selectedId
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => onSelect(item.id)}
-                  className={`relative rounded-lg overflow-hidden border-2 transition-all text-left ${
-                    selected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="aspect-square bg-gray-100">
-                    <img
-                      src={item.image}
-                      alt={item.label}
-                      className="w-full h-full object-cover"
-                      onError={e => {
-                        ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23e5e7eb' width='100' height='100'/><text x='50' y='55' text-anchor='middle' fill='%239ca3af' font-size='10'>${item.label}</text></svg>`
-                      }}
-                    />
-                  </div>
-                  <div className="p-1.5 text-center">
-                    <div className="text-xs font-medium text-gray-700 leading-tight">{item.label.split('-').pop()}</div>
-                    {item.price > 0 && (
-                      <div className="text-xs text-orange-500">+¥{item.price.toLocaleString()}</div>
-                    )}
-                  </div>
-                  {selected && (
-                    <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                      <Check size={10} className="text-white" />
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ============================================================
-// 开门方式（动态显示每层总价）
+// 开门方式
 // ============================================================
 function DoorOpeningSelector({
   value,
@@ -272,16 +245,13 @@ function DoorOpeningSelector({
               key={opt.name}
               onClick={() => onChange(opt.name)}
               className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                selected
-                  ? 'border-blue-600 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                selected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-600'
               }`}
             >
               <div className="text-xs">{opt.name}</div>
               {opt.basePrice > 0 && (
                 <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
                   ¥{total.toLocaleString()}
-                  {opt.perFloorPrice > 0 && <span className="text-gray-400"> (¥{opt.basePrice}+¥{opt.perFloorPrice}×{otherFloors})</span>}
                 </div>
               )}
             </button>
@@ -299,6 +269,10 @@ export default function QuotationPage() {
   const [selections, setSelections] = useState<QuoteSelections>(DEFAULT_SELECTIONS)
   const [showQuote, setShowQuote] = useState(false)
   const [showAllFloors, setShowAllFloors] = useState(false)
+  const [cabinLevel, setCabinLevel] = useState<'普通' | '高级' | '豪华'>('普通')
+
+  // 墙面/轿门下拉相关
+  const wallOptions = DECORATION_MATERIALS.map(m => ({ name: m.name, nameEn: m.nameEn, price: m.price }))
 
   const breakdown = calculatePrice(selections)
   const floorCount = parseInt(selections.floors.match(/\d+/)?.[0] || '10')
@@ -307,6 +281,53 @@ export default function QuotationPage() {
 
   const update = <K extends keyof QuoteSelections>(key: K, value: QuoteSelections[K]) => {
     setSelections(prev => ({ ...prev, [key]: value }))
+  }
+
+  const handleCabinLevelChange = (level: '普通' | '高级' | '豪华') => {
+    setCabinLevel(level)
+    // 选中该level的第一个
+    const first = CABIN_PRESETS.find(p => p.level === level)
+    if (first) {
+      setSelections(prev => ({
+        ...prev,
+        cabinPresetId: first.id,
+        ceilingPresetId: first.defaultCeilingId,
+        floorPresetId: first.defaultFloorId,
+      }))
+    }
+  }
+
+  const handleCabinSelect = (id: string) => {
+    const preset = CABIN_PRESETS.find(p => p.id === id)
+    if (!preset) return
+    // 自动带入默认吊顶和地板，但保留用户之前的手动选择状态
+    // 只在第一次选择时自动带入默认
+    const currentPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
+    const isFirstSelection = currentPreset?.level !== preset.level
+
+    setSelections(prev => ({
+      ...prev,
+      cabinPresetId: id,
+      wallBack: preset.wallBack,
+      wallLeft: preset.wallLeft,
+      wallRight: preset.wallRight,
+      wallFront: preset.wallFront,
+      carDoor: preset.carDoor,
+      ceilingPresetId: isFirstSelection ? preset.defaultCeilingId : prev.ceilingPresetId,
+      floorPresetId: isFirstSelection ? preset.defaultFloorId : prev.floorPresetId,
+    }))
+  }
+
+  // QuoteSelections 需要加 wallBack/wallLeft/wallRight/wallFront/carDoor 字段
+  // 已经在数据层添加了，这里用类型断言处理
+  const wallBack = (selections as any).wallBack ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallBack ?? '201发纹'
+  const wallLeft = (selections as any).wallLeft ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallLeft ?? '201发纹'
+  const wallRight = (selections as any).wallRight ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallRight ?? '201发纹'
+  const wallFront = (selections as any).wallFront ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.wallFront ?? '201发纹'
+  const carDoor = (selections as any).carDoor ?? CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)?.carDoor ?? '201发纹'
+
+  const setWall = (key: string, value: string) => {
+    setSelections(prev => ({ ...prev, [key]: value } as any))
   }
 
   const toggleOptional = (name: string) => {
@@ -318,11 +339,13 @@ export default function QuotationPage() {
     }
   }
 
-  // 获取当前选中的预设信息（用于右侧汇总显示）
+  const cabinLevelPresets = CABIN_PRESETS.filter(p => p.level === cabinLevel)
   const cabinPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
   const ceilingPreset = CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)
   const floorPreset = FLOOR_PRESETS.find(p => p.id === selections.floorPresetId)
   const doorPreset = DOOR_PRESETS.find(p => p.id === selections.doorPresetId)
+  const copPreset = COP_PRESETS.find(p => p.id === selections.copPresetId)
+  const lopPreset = LOP_PRESETS.find(p => p.id === selections.lopPresetId)
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -341,18 +364,8 @@ export default function QuotationPage() {
 
             {/* 基础配置 */}
             <SectionCard title="基础配置" icon={Settings}>
-              <SelectButton
-                label="载重"
-                options={LOAD_OPTIONS}
-                value={selections.load}
-                onChange={v => update('load', v)}
-              />
-              <SelectButton
-                label="速度"
-                options={SPEED_OPTIONS}
-                value={selections.speed}
-                onChange={v => update('speed', v)}
-              />
+              <SelectButton label="载重" options={LOAD_OPTIONS} value={selections.load} onChange={v => update('load', v)} />
+              <SelectButton label="速度" options={SPEED_OPTIONS} value={selections.speed} onChange={v => update('speed', v)} />
               <div>
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">层站</h3>
                 <div className="flex flex-wrap gap-2">
@@ -363,9 +376,7 @@ export default function QuotationPage() {
                         key={opt.name}
                         onClick={() => update('floors', opt.name)}
                         className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                          selected
-                            ? 'border-blue-600 bg-blue-50 text-blue-700'
-                            : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                          selected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-600'
                         }`}
                       >
                         <div className="text-xs">{opt.name}</div>
@@ -391,74 +402,126 @@ export default function QuotationPage() {
 
             {/* 品牌选择 */}
             <SectionCard title="品牌选择" icon={Zap}>
-              <SelectButton
-                label={TRACTION_OPTIONS.groupName}
-                options={TRACTION_OPTIONS.options}
-                value={selections.traction}
-                onChange={v => update('traction', v)}
-              />
-              <SelectButton
-                label={CONTROLLER_OPTIONS.groupName}
-                options={CONTROLLER_OPTIONS.options}
-                value={selections.controller}
-                onChange={v => update('controller', v)}
-              />
-              <SelectButton
-                label={DOOR_MACHINE_OPTIONS.groupName}
-                options={DOOR_MACHINE_OPTIONS.options}
-                value={selections.doorMachine}
-                onChange={v => update('doorMachine', v)}
-              />
+              <SelectButton label={TRACTION_OPTIONS.groupName} options={TRACTION_OPTIONS.options} value={selections.traction} onChange={v => update('traction', v)} />
+              <SelectButton label={CONTROLLER_OPTIONS.groupName} options={CONTROLLER_OPTIONS.options} value={selections.controller} onChange={v => update('controller', v)} />
+              <SelectButton label={DOOR_MACHINE_OPTIONS.groupName} options={DOOR_MACHINE_OPTIONS.options} value={selections.doorMachine} onChange={v => update('doorMachine', v)} />
             </SectionCard>
 
             {/* 开门方式 */}
             <SectionCard title="开门方式" icon={Settings}>
-              <DoorOpeningSelector
-                value={selections.doorOpening}
-                onChange={v => update('doorOpening', v)}
-                floorCount={floorCount}
-              />
+              <DoorOpeningSelector value={selections.doorOpening} onChange={v => update('doorOpening', v)} floorCount={floorCount} />
+              <div className="bg-gray-50 rounded px-3 py-2 text-xs text-gray-500 leading-relaxed">
+                <div className="font-semibold text-gray-600 mb-1">计价说明：</div>
+                <div>• 中分门：<span className="text-green-600">不加价</span></div>
+                <div>• 旁开/旁开双折/中分双折：<span className="text-orange-600">¥750 + ¥350×(层数-1)</span></div>
+                <div>• 旁开三折：<span className="text-orange-600">¥1500 + ¥800×(层数-1)</span></div>
+              </div>
             </SectionCard>
 
             {/* ========== 轿厢 ========== */}
             <SectionCard title="轿厢" icon={Star}>
-              {/* 风格选择 */}
+              {/* 1. 版本标签切换 */}
+              <div className="flex gap-2 mb-4">
+                {(['普通', '高级', '豪华'] as const).map(level => (
+                  <button
+                    key={level}
+                    onClick={() => handleCabinLevelChange(level)}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-semibold transition-all ${
+                      cabinLevel === level ? 'border-blue-600 bg-blue-600 text-white' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+
+              {/* 2. 当前版本的图片网格 */}
               <ImageSelector
-                title="轿厢风格（选择后自动填充四壁和轿门）"
-                items={CABIN_PRESETS}
+                title="选择款式（选择后四壁和轿门将自动填充，也可手动调整）"
+                items={cabinLevelPresets}
                 selectedId={selections.cabinPresetId}
-                onSelect={id => update('cabinPresetId', id)}
-                groupBy={item => item.level}
+                onSelect={handleCabinSelect}
               />
-              {cabinPreset && (
-                <div className="bg-blue-50 rounded-lg p-3 mb-4 text-xs">
-                  <div className="font-semibold text-blue-700 mb-1">已选：{cabinPreset.label}</div>
-                  <div className="text-blue-600 grid grid-cols-2 gap-x-4 gap-y-0.5">
-                    <span>后壁：{cabinPreset.wallBack}</span>
-                    <span>左侧壁：{cabinPreset.wallLeft}</span>
-                    <span>右侧壁：{cabinPreset.wallRight}</span>
-                    <span>前壁：{cabinPreset.wallFront}</span>
-                    <span>轿门：{cabinPreset.carDoor}</span>
-                    {cabinPreset.price > 0 && <span className="text-orange-600 font-medium">+¥{cabinPreset.price.toLocaleString()}</span>}
+
+              {/* 3. 四壁+轿门下拉（可手动调整） */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {[
+                  { key: 'wallBack', label: '后壁', value: wallBack },
+                  { key: 'wallLeft', label: '左侧壁', value: wallLeft },
+                  { key: 'wallRight', label: '右侧壁', value: wallRight },
+                  { key: 'wallFront', label: '前壁', value: wallFront },
+                  { key: 'carDoor', label: '轿门', value: carDoor },
+                ].map(({ key, label, value }) => (
+                  <div key={key}>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                    <select
+                      value={value}
+                      onChange={e => setWall(key, e.target.value)}
+                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
+                    >
+                      {wallOptions.map(opt => (
+                        <option key={opt.name} value={opt.name}>
+                          {opt.name} {opt.price > 0 ? `(+¥${opt.price})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                </div>
-              )}
-              {/* 吊顶 */}
+                ))}
+              </div>
+
+              {/* 4. 吊顶 */}
               <ImageSelector
-                title="吊顶"
+                title="吊顶（跟随轿厢款式，也可自行切换其他）"
                 items={CEILING_PRESETS}
                 selectedId={selections.ceilingPresetId}
                 onSelect={id => update('ceilingPresetId', id)}
               />
-              {/* 地板 */}
+              {ceilingPreset && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                  <span>跟随轿厢：</span>
+                  <span className="text-blue-500">{cabinPreset?.level ?? ''} {cabinPreset?.label.split('-').pop()}</span>
+                  <span>→</span>
+                  <span className="text-gray-600">{ceilingPreset.label}</span>
+                </div>
+              )}
+              {/* 吊顶备注 */}
+              <div className="mb-4">
+                <textarea
+                  value={(selections as any).ceilingRemarks ?? ''}
+                  onChange={e => update('ceilingRemarks' as any, e.target.value)}
+                  placeholder="吊顶备注..."
+                  rows={1}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
+                />
+              </div>
+
+              {/* 5. 地板 */}
               <ImageSelector
-                title="地板"
+                title="地板（跟随轿厢款式，也可自行切换其他）"
                 items={FLOOR_PRESETS}
                 selectedId={selections.floorPresetId}
                 onSelect={id => update('floorPresetId', id)}
               />
+              {floorPreset && (
+                <div className="text-xs text-gray-400 mb-2 flex items-center gap-1">
+                  <span>跟随轿厢：</span>
+                  <span className="text-blue-500">{cabinPreset?.level ?? ''} {cabinPreset?.label.split('-').pop()}</span>
+                  <span>→</span>
+                  <span className="text-gray-600">{floorPreset.label}</span>
+                </div>
+              )}
+              {/* 地板备注 */}
+              <div className="mb-4">
+                <textarea
+                  value={(selections as any).floorRemarks ?? ''}
+                  onChange={e => update('floorRemarks' as any, e.target.value)}
+                  placeholder="地板备注..."
+                  rows={1}
+                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
+                />
+              </div>
 
-              {/* 备注 + 参考图片 */}
+              {/* 轿厢备注+参考图片 */}
               <DecorationModuleFooter
                 remarks={selections.cabinRemarks}
                 images={selections.cabinRefImages}
@@ -471,25 +534,12 @@ export default function QuotationPage() {
             {/* ========== 门厅 ========== */}
             <SectionCard title="门厅" icon={Star}>
               <ImageSelector
-                title="门厅风格（选择后自动填充厅门和小门套）"
+                title="门厅风格"
                 items={DOOR_PRESETS}
                 selectedId={selections.doorPresetId}
                 onSelect={id => update('doorPresetId', id)}
               />
-              {doorPreset && (
-                <div className="bg-blue-50 rounded-lg p-3 text-xs">
-                  <div className="font-semibold text-blue-700 mb-1">已选：{doorPreset.label}</div>
-                  <div className="text-blue-600 grid grid-cols-2 gap-x-4 gap-y-0.5">
-                    <span>厅门(基站)：{doorPreset.hallDoorBase}</span>
-                    <span>厅门(其余层)：{doorPreset.hallDoorOther}</span>
-                    <span>小门套(基站)：{doorPreset.doorFrameBase}</span>
-                    <span>小门套(其余层)：{doorPreset.doorFrameOther}</span>
-                    {doorPreset.price > 0 && <span className="text-orange-600 font-medium">+¥{doorPreset.price.toLocaleString()}</span>}
-                  </div>
-                </div>
-              )}
 
-              {/* 备注 + 参考图片 */}
               <DecorationModuleFooter
                 remarks={selections.doorRemarks}
                 images={selections.doorRefImages}
@@ -499,19 +549,33 @@ export default function QuotationPage() {
               />
             </SectionCard>
 
-            {/* 显示与召唤 */}
+            {/* ========== 显示与召唤 ========== */}
             <SectionCard title="显示与召唤" icon={Star}>
-              <SelectButton
-                label="显示板"
-                options={DISPLAY_OPTIONS}
-                value={selections.display}
-                onChange={v => update('display', v)}
+              {/* COP */}
+              <ImageSelector
+                title="COP（轿厢操作面板）"
+                items={COP_PRESETS}
+                selectedId={selections.copPresetId}
+                onSelect={id => update('copPresetId', id)}
               />
-              <SelectButton
-                label="召唤盒"
-                options={CALLBOX_STYLE_OPTIONS}
-                value={selections.callBoxStyle}
-                onChange={v => update('callBoxStyle', v)}
+              {/* LOP */}
+              <ImageSelector
+                title="LOP（层站召唤盒）"
+                items={LOP_PRESETS}
+                selectedId={selections.lopPresetId}
+                onSelect={id => update('lopPresetId', id)}
+              />
+              {/* 显示器 */}
+              <SelectButton label="显示器" options={DISPLAY_OPTIONS} value={selections.display} onChange={v => update('display', v)} />
+              {/* 召唤盒 */}
+              <SelectButton label="召唤盒款式" options={CALLBOX_STYLE_OPTIONS} value={selections.callBoxStyle} onChange={v => update('callBoxStyle', v)} />
+
+              <DecorationModuleFooter
+                remarks={selections.displayRemarks}
+                images={selections.displayRefImages}
+                onRemarksChange={v => update('displayRemarks', v)}
+                onImagesChange={v => update('displayRefImages', v)}
+                moduleName="显示与召唤"
               />
             </SectionCard>
 
@@ -550,7 +614,7 @@ export default function QuotationPage() {
               <textarea
                 value={selections.remarks}
                 onChange={e => update('remarks', e.target.value)}
-                placeholder="填写客户特殊需求..."
+                placeholder="其他需求..."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
               />
@@ -565,162 +629,52 @@ export default function QuotationPage() {
                 报价汇总
               </h2>
 
-              {/* 配置摘要 */}
               <div className="space-y-1.5 mb-4 pb-4 border-b border-gray-100 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">载重：</span>
-                  <span className="font-medium">{selections.load}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">速度：</span>
-                  <span className="font-medium">{selections.speed}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">层站：</span>
-                  <span className="font-medium">{selections.floors}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">开门方式：</span>
-                  <span className="font-medium">{selections.doorOpening}</span>
-                </div>
-                {cabinPreset && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">轿厢：</span>
-                    <span className="font-medium text-blue-600">{cabinPreset.label}</span>
-                  </div>
-                )}
-                {ceilingPreset && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">吊顶：</span>
-                    <span className="font-medium">{ceilingPreset.label}</span>
-                  </div>
-                )}
-                {floorPreset && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">地板：</span>
-                    <span className="font-medium">{floorPreset.label}</span>
-                  </div>
-                )}
-                {doorPreset && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">门厅：</span>
-                    <span className="font-medium text-blue-600">{doorPreset.label}</span>
-                  </div>
-                )}
+                <div className="flex justify-between"><span className="text-gray-500">载重：</span><span className="font-medium">{selections.load}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">速度：</span><span className="font-medium">{selections.speed}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">层站：</span><span className="font-medium">{selections.floors}</span></div>
+                <div className="flex justify-between"><span className="text-gray-500">开门方式：</span><span className="font-medium">{selections.doorOpening}</span></div>
+                {cabinPreset && <div className="flex justify-between"><span className="text-gray-500">轿厢：</span><span className="font-medium text-blue-600">{cabinPreset.level} {cabinPreset.label.split('-').pop()}</span></div>}
+                {ceilingPreset && <div className="flex justify-between"><span className="text-gray-500">吊顶：</span><span className="font-medium">{ceilingPreset.label}</span></div>}
+                {floorPreset && <div className="flex justify-between"><span className="text-gray-500">地板：</span><span className="font-medium">{floorPreset.label}</span></div>}
+                {doorPreset && <div className="flex justify-between"><span className="text-gray-500">门厅：</span><span className="font-medium text-blue-600">{doorPreset.label}</span></div>}
+                {copPreset && <div className="flex justify-between"><span className="text-gray-500">COP：</span><span className="font-medium">{copPreset.label}</span></div>}
+                {lopPreset && <div className="flex justify-between"><span className="text-gray-500">LOP：</span><span className="font-medium">{lopPreset.label}</span></div>}
               </div>
 
-              {/* 价格明细 */}
               <div className="space-y-1.5 mb-4 pb-4 border-b border-gray-100 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-gray-400">基准价（630/1.0/10层）</span>
-                  <span>¥{BASE_PRICE.toLocaleString()}</span>
-                </div>
-                {breakdown.loadPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">载重</span>
-                    <span className={breakdown.loadPrice > 0 ? 'text-orange-600' : 'text-green-600'}>
-                      {breakdown.loadPrice > 0 ? '+' : ''}¥{breakdown.loadPrice.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {breakdown.speedPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">速度</span>
-                    <span className={breakdown.speedPrice > 0 ? 'text-orange-600' : 'text-green-600'}>
-                      {breakdown.speedPrice > 0 ? '+' : ''}¥{breakdown.speedPrice.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {breakdown.floorPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">层站</span>
-                    <span className={breakdown.floorPrice > 0 ? 'text-orange-600' : 'text-green-600'}>
-                      {breakdown.floorPrice > 0 ? '+' : ''}¥{breakdown.floorPrice.toLocaleString()}
-                    </span>
-                  </div>
-                )}
-                {breakdown.doorOpeningPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">开门方式</span>
-                    <span className="text-orange-600">+¥{breakdown.doorOpeningPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.cabinPresetPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">轿厢</span>
-                    <span className="text-orange-600">+¥{breakdown.cabinPresetPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.ceilingPresetPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">吊顶</span>
-                    <span className="text-orange-600">+¥{breakdown.ceilingPresetPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.floorPresetPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">地板</span>
-                    <span className="text-orange-600">+¥{breakdown.floorPresetPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.doorPresetPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">门厅</span>
-                    <span className="text-orange-600">+¥{breakdown.doorPresetPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.displayPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">显示板</span>
-                    <span className="text-orange-600">+¥{breakdown.displayPrice.toLocaleString()}</span>
-                  </div>
-                )}
-                {breakdown.optionalPrice !== 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">选配功能</span>
-                    <span className="text-orange-600">+¥{breakdown.optionalPrice.toLocaleString()}</span>
-                  </div>
-                )}
+                <div className="flex justify-between"><span className="text-gray-400">基准价</span><span>¥{BASE_PRICE.toLocaleString()}</span></div>
+                {breakdown.loadPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">载重</span><span className={breakdown.loadPrice > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.loadPrice > 0 ? '+' : ''}¥{breakdown.loadPrice.toLocaleString()}</span></div>}
+                {breakdown.speedPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">速度</span><span className={breakdown.speedPrice > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.speedPrice > 0 ? '+' : ''}¥{breakdown.speedPrice.toLocaleString()}</span></div>}
+                {breakdown.floorPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">层站</span><span className={breakdown.floorPrice > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.floorPrice > 0 ? '+' : ''}¥{breakdown.floorPrice.toLocaleString()}</span></div>}
+                {breakdown.doorOpeningPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">开门方式</span><span className="text-orange-600">+¥{breakdown.doorOpeningPrice.toLocaleString()}</span></div>}
+                {breakdown.cabinPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">轿厢</span><span className="text-orange-600">+¥{breakdown.cabinPresetPrice.toLocaleString()}</span></div>}
+                {breakdown.wallCarDoorAdjustment !== 0 && <div className="flex justify-between"><span className="text-gray-400">墙板调整</span><span className={breakdown.wallCarDoorAdjustment > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.wallCarDoorAdjustment > 0 ? '+' : ''}¥{breakdown.wallCarDoorAdjustment.toLocaleString()}</span></div>}
+                {breakdown.ceilingPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">吊顶</span><span className="text-orange-600">+¥{breakdown.ceilingPresetPrice.toLocaleString()}</span></div>}
+                {breakdown.floorPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">地板</span><span className="text-orange-600">+¥{breakdown.floorPresetPrice.toLocaleString()}</span></div>}
+                {breakdown.doorPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">门厅</span><span className="text-orange-600">+¥{breakdown.doorPresetPrice.toLocaleString()}</span></div>}
+                {breakdown.displayPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">显示器</span><span className="text-orange-600">+¥{breakdown.displayPrice.toLocaleString()}</span></div>}
+                {breakdown.optionalPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">选配功能</span><span className="text-orange-600">+¥{breakdown.optionalPrice.toLocaleString()}</span></div>}
               </div>
 
-              {/* 总价 */}
               <div className="mb-5">
                 <div className="text-xs text-gray-500 mb-0.5">预估价格</div>
                 <div className="text-3xl font-bold text-blue-600">¥{breakdown.total.toLocaleString()}</div>
                 {breakdown.hasCustomDecoration ? (
-                  <div className="flex items-center gap-1 text-xs text-orange-500 mt-1">
-                    <AlertTriangle size={12} />
-                    <span>含自定义装潢，需确认价格</span>
-                  </div>
+                  <div className="flex items-center gap-1 text-xs text-orange-500 mt-1"><AlertTriangle size={12} /><span>含自定义装潢，需确认价格</span></div>
                 ) : (
                   <div className="text-xs text-gray-400">*最终价格以实际方案为准</div>
                 )}
               </div>
 
-              {/* 操作 */}
               <div className="space-y-2">
-                <button
-                  onClick={() => setShowQuote(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition text-sm"
-                >
-                  查看详细报价
-                </button>
-                <button className="w-full border border-gray-300 hover:border-gray-400 text-gray-700 py-2.5 rounded-lg font-medium transition text-sm">
-                  联系销售
-                </button>
+                <button onClick={() => setShowQuote(true)} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition text-sm">查看详细报价</button>
+                <button className="w-full border border-gray-300 hover:border-gray-400 text-gray-700 py-2.5 rounded-lg font-medium transition text-sm">联系销售</button>
               </div>
 
-              {/* 优势 */}
               <div className="mt-5 pt-4 border-t border-gray-100 space-y-2">
-                {[
-                  { icon: Shield, text: '3年质保' },
-                  { icon: Truck, text: '全国发货' },
-                  { icon: Star, text: 'ISO认证' },
-                ].map(({ icon: Icon, text }) => (
-                  <div key={text} className="flex items-center gap-2 text-xs text-gray-600">
-                    <Icon size={14} className="text-green-600" />
-                    <span>{text}</span>
-                  </div>
+                {[{ icon: Shield, text: '3年质保' }, { icon: Truck, text: '全国发货' }, { icon: Star, text: 'ISO认证' }].map(({ icon: Icon, text }) => (
+                  <div key={text} className="flex items-center gap-2 text-xs text-gray-600"><Icon size={14} className="text-green-600" /><span>{text}</span></div>
                 ))}
               </div>
             </div>
@@ -728,14 +682,13 @@ export default function QuotationPage() {
         </div>
       </div>
 
-      {/* ========== 报价单弹窗 ========== */}
+      {/* 报价单弹窗 */}
       {showQuote && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">详细报价单</h2>
 
             <div className="space-y-3 mb-6">
-              {/* 基础配置 */}
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="font-semibold text-gray-800 mb-2">基础配置</div>
                 <div className="text-sm space-y-1">
@@ -745,53 +698,45 @@ export default function QuotationPage() {
                   <div className="flex justify-between"><span>曳引机：</span><span>{selections.traction}</span></div>
                   <div className="flex justify-between"><span>控制系统：</span><span>{selections.controller}</span></div>
                   <div className="flex justify-between"><span>门机：</span><span>{selections.doorMachine}</span></div>
-                  <div className="flex justify-between">
-                    <span>开门方式：</span>
-                    <span>{selections.doorOpening}
-                      {breakdown.doorOpeningPrice > 0 && ` (+¥${breakdown.doorOpeningPrice.toLocaleString()})`}
-                    </span>
-                  </div>
+                  <div className="flex justify-between"><span>开门方式：</span><span>{selections.doorOpening}{breakdown.doorOpeningPrice > 0 && ` (+¥${breakdown.doorOpeningPrice.toLocaleString()})`}</span></div>
                 </div>
               </div>
 
-              {/* 轿厢 */}
-              {cabinPreset && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="font-semibold text-gray-800 mb-2">轿厢</div>
+                <div className="text-sm space-y-1 text-gray-600">
+                  <div>款式：{cabinPreset?.level} {cabinPreset?.label.split('-').pop()}</div>
+                  <div>后壁：{wallBack}</div>
+                  <div>左侧壁：{wallLeft}</div>
+                  <div>右侧壁：{wallRight}</div>
+                  <div>前壁：{wallFront}</div>
+                  <div>轿门：{carDoor}</div>
+                  {cabinPreset && <div className="text-orange-600 font-medium">+¥{cabinPreset.price.toLocaleString()}</div>}
+                </div>
+              </div>
+
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <div className="text-sm space-y-1 text-gray-600">
+                  <div>吊顶：{ceilingPreset?.label}</div>
+                  <div>地板：{floorPreset?.label}</div>
+                </div>
+              </div>
+
+              {/* 门厅 */}
+              {doorPreset && (
                 <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="font-semibold text-gray-800 mb-2">轿厢 - {cabinPreset.label}</div>
+                  <div className="font-semibold text-gray-800 mb-2">门厅 - {doorPreset.label}</div>
                   <div className="text-sm space-y-1 text-gray-600">
-                    <div>后壁：{cabinPreset.wallBack}</div>
-                    <div>左侧壁：{cabinPreset.wallLeft}</div>
-                    <div>右侧壁：{cabinPreset.wallRight}</div>
-                    <div>前壁：{cabinPreset.wallFront}</div>
-                    <div>轿门：{cabinPreset.carDoor}</div>
-                    {cabinPreset.price > 0 && (
-                      <div className="text-orange-600 font-medium">+¥{cabinPreset.price.toLocaleString()}</div>
-                    )}
+                    <div>厅门(基站层)：{doorPreset.hallDoorBase}</div>
+                    <div>厅门(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.hallDoorOther}</div>
+                    <div>小门套(基站层)：{doorPreset.doorFrameBase}</div>
+                    <div>小门套(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.doorFrameOther}</div>
+                    <div className="text-orange-600 font-medium">+¥{doorPreset.price.toLocaleString()}</div>
                   </div>
                 </div>
               )}
 
-              {/* 吊顶 */}
-              {ceilingPreset && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">吊顶：{ceilingPreset.label}</span>
-                    {ceilingPreset.price > 0 && <span className="text-orange-600">+¥{ceilingPreset.price}</span>}
-                  </div>
-                </div>
-              )}
-
-              {/* 地板 */}
-              {floorPreset && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">地板：{floorPreset.label}</span>
-                    {floorPreset.price > 0 && <span className="text-orange-600">+¥{floorPreset.price}</span>}
-                  </div>
-                </div>
-              )}
-
-              {/* 轿厢备注/图片 */}
+              {/* 轿厢自定义 */}
               {(selections.cabinRemarks || (selections.cabinRefImages?.length ?? 0) > 0) && (
                 <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="font-semibold text-orange-700 text-sm mb-1">轿厢自定义需求</div>
@@ -806,23 +751,7 @@ export default function QuotationPage() {
                 </div>
               )}
 
-              {/* 门厅 */}
-              {doorPreset && (
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="font-semibold text-gray-800 mb-2">门厅 - {doorPreset.label}</div>
-                  <div className="text-sm space-y-1 text-gray-600">
-                    <div>厅门(基站层)：{doorPreset.hallDoorBase}</div>
-                    <div>厅门(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.hallDoorOther}</div>
-                    <div>小门套(基站层)：{doorPreset.doorFrameBase}</div>
-                    <div>小门套(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.doorFrameOther}</div>
-                    {doorPreset.price > 0 && (
-                      <div className="text-orange-600 font-medium">+¥{doorPreset.price.toLocaleString()}</div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* 门厅备注/图片 */}
+              {/* 门厅自定义 */}
               {(selections.doorRemarks || (selections.doorRefImages?.length ?? 0) > 0) && (
                 <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="font-semibold text-orange-700 text-sm mb-1">门厅自定义需求</div>
@@ -834,6 +763,38 @@ export default function QuotationPage() {
                       ))}
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* COP/LOP */}
+              {(copPreset || lopPreset) && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="font-semibold text-gray-800 mb-2">操作与召唤</div>
+                  <div className="text-sm space-y-1 text-gray-600">
+                    {copPreset && <div>COP：{copPreset.label}</div>}
+                    {lopPreset && <div>LOP：{lopPreset.label}</div>}
+                    <div>显示器：{selections.display}</div>
+                    <div>召唤盒：{selections.callBoxStyle}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* 吊顶/地板/显示备注 */}
+              {(selections.ceilingRemarks || selections.floorRemarks || (selections.displayRefImages?.length ?? 0) > 0) && (
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="font-semibold text-orange-700 text-sm mb-1">装潢补充需求</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    {selections.ceilingRemarks && <div>【吊顶】{selections.ceilingRemarks}</div>}
+                    {selections.floorRemarks && <div>【地板】{selections.floorRemarks}</div>}
+                    {selections.displayRemarks && <div>【显示/召唤】{selections.displayRemarks}</div>}
+                    {selections.displayRefImages && selections.displayRefImages.length > 0 && (
+                      <div className="flex gap-1 flex-wrap mt-1">
+                        {selections.displayRefImages.map((img, i) => (
+                          <img key={i} src={img} alt="display-ref" className="w-12 h-12 object-cover rounded border border-orange-200" />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -869,19 +830,15 @@ export default function QuotationPage() {
                   <span>总计：</span>
                   <span className="text-blue-600">¥{breakdown.total.toLocaleString()}</span>
                 </div>
+                {breakdown.hasCustomDecoration && (
+                  <div className="text-xs text-orange-500 mt-1">*含自定义装潢，价格以最终确认结果为准</div>
+                )}
               </div>
             </div>
 
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowQuote(false)}
-                className="flex-1 border border-gray-300 py-2.5 rounded-lg font-medium text-sm"
-              >
-                关闭
-              </button>
-              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium text-sm">
-                提交询价
-              </button>
+              <button onClick={() => setShowQuote(false)} className="flex-1 border border-gray-300 py-2.5 rounded-lg font-medium text-sm">关闭</button>
+              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium text-sm">提交询价</button>
             </div>
           </div>
         </div>

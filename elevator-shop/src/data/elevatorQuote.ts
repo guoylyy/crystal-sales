@@ -27,7 +27,6 @@ export const BASE_PRICE = 49000
 // ============================================================
 export const LOAD_OPTIONS: QuoteOption[] = [
   { name: '630kg',  nameEn: '630kg',  price: 0,     tier: 1 },
-  { name: '680kg',  nameEn: '680kg',  price: 2000,  tier: 2 },
   { name: '800kg',  nameEn: '800kg',  price: 4000,  tier: 3 },
   { name: '1000kg', nameEn: '1000kg', price: 6000,  tier: 4 },
   { name: '1050kg', nameEn: '1050kg', price: 8000,  tier: 5 },
@@ -184,133 +183,72 @@ export const DECORATION_MATERIALS: DecorationMaterial[] = [
 export const DECORATION_MATERIAL_MAP = new Map(DECORATION_MATERIALS.map(m => [m.name, m]))
 
 // ============================================================
-// 轿厢风格预设（对应 Cabbin-selection 图片）
+// 轿厢风格预设（对应 Cabin-selection 图片）
 // 选择图片后自动填充：后壁/左侧壁/右侧壁/前壁/轿门
 // ============================================================
 export interface CabinPreset {
   id: string
-  image: string       // 图片路径
+  image: string
   level: '普通' | '高级' | '豪华'
-  label: string       // 显示名称
+  label: string
   wallBack: string    // 后壁材料
   wallLeft: string    // 左侧壁材料
   wallRight: string   // 右侧壁材料
   wallFront: string   // 前壁材料
   carDoor: string     // 轿门材料
-  price: number        // 轿厢整体加价
+  price: number
+  defaultCeilingId: string   // 该款默认吊顶ID
+  defaultFloorId: string      // 该款默认地板ID
 }
 
 export const CABIN_PRESETS: CabinPreset[] = [
   // 普通版
   {
-    id: 'Basic-1',
-    image: '/img/cabin/Basic-1.png',
-    level: '普通',
-    label: '普通版-款式1',
-    wallBack: '201发纹',
-    wallLeft: '201发纹',
-    wallRight: '201发纹',
-    wallFront: '201发纹',
-    carDoor: '201发纹',
-    price: 0,
+    id: 'Basic-1', image: '/img/cabin/Basic-1.png', level: '普通', label: '普通版-款式1',
+    wallBack: '201发纹', wallLeft: '201发纹', wallRight: '201发纹', wallFront: '201发纹', carDoor: '201发纹',
+    price: 0, defaultCeilingId: 'top-1', defaultFloorId: 'grand-1',
   },
   {
-    id: 'Basic-2',
-    image: '/img/cabin/Basic-2.png',
-    level: '普通',
-    label: '普通版-款式2',
-    wallBack: '304发纹',
-    wallLeft: '304发纹',
-    wallRight: '304发纹',
-    wallFront: '304发纹',
-    carDoor: '304发纹',
-    price: 1600,
+    id: 'Basic-2', image: '/img/cabin/Basic-2.png', level: '普通', label: '普通版-款式2',
+    wallBack: '304发纹', wallLeft: '304发纹', wallRight: '304发纹', wallFront: '304发纹', carDoor: '304发纹',
+    price: 1600, defaultCeilingId: 'top-1', defaultFloorId: 'grand-1',
   },
   {
-    id: 'Basic-3',
-    image: '/img/cabin/Basic-3.png',
-    level: '普通',
-    label: '普通版-款式3',
-    wallBack: '钢板喷涂色',
-    wallLeft: '201发纹',
-    wallRight: '201发纹',
-    wallFront: '201发纹',
-    carDoor: '201发纹',
-    price: 0,
+    id: 'Basic-3', image: '/img/cabin/Basic-3.png', level: '普通', label: '普通版-款式3',
+    wallBack: '钢板喷涂色', wallLeft: '201发纹', wallRight: '201发纹', wallFront: '201发纹', carDoor: '201发纹',
+    price: 0, defaultCeilingId: 'top-1', defaultFloorId: 'grand-1',
   },
   // 高级版
   {
-    id: 'Deluxe-1',
-    image: '/img/cabin/Deluxe-1.png',
-    level: '高级',
-    label: '高级版-款式1',
-    wallBack: '304镜面',
-    wallLeft: '304发纹',
-    wallRight: '304发纹',
-    wallFront: '304玫瑰金发纹',
-    carDoor: '304发纹',
-    price: 2200,
+    id: 'Deluxe-1', image: '/img/cabin/Deluxe-1.png', level: '高级', label: '高级版-款式1',
+    wallBack: '304镜面', wallLeft: '304发纹', wallRight: '304发纹', wallFront: '304玫瑰金发纹', carDoor: '304发纹',
+    price: 2200, defaultCeilingId: 'top-2', defaultFloorId: 'grand-2',
   },
   {
-    id: 'Deluxe-2',
-    image: '/img/cabin/Deluxe-2.png',
-    level: '高级',
-    label: '高级版-款式2',
-    wallBack: '304钛金发纹',
-    wallLeft: '304发纹',
-    wallRight: '304发纹',
-    wallFront: '304钛金发纹',
-    carDoor: '304发纹',
-    price: 2400,
+    id: 'Deluxe-2', image: '/img/cabin/Deluxe-2.png', level: '高级', label: '高级版-款式2',
+    wallBack: '304钛金发纹', wallLeft: '304发纹', wallRight: '304发纹', wallFront: '304钛金发纹', carDoor: '304发纹',
+    price: 2400, defaultCeilingId: 'top-2', defaultFloorId: 'grand-2',
   },
   {
-    id: 'Deluxe-3',
-    image: '/img/cabin/Deluxe-3.png',
-    level: '高级',
-    label: '高级版-款式3',
-    wallBack: '304玫瑰金镜面',
-    wallLeft: '304玫瑰金发纹',
-    wallRight: '304玫瑰金发纹',
-    wallFront: '304玫瑰金镜面',
-    carDoor: '304玫瑰金发纹',
-    price: 3200,
+    id: 'Deluxe-3', image: '/img/cabin/Deluxe-3.png', level: '高级', label: '高级版-款式3',
+    wallBack: '304玫瑰金镜面', wallLeft: '304玫瑰金发纹', wallRight: '304玫瑰金发纹', wallFront: '304玫瑰金镜面', carDoor: '304玫瑰金发纹',
+    price: 3200, defaultCeilingId: 'top-3', defaultFloorId: 'grand-3',
   },
   // 豪华版
   {
-    id: 'Ultra-1',
-    image: '/img/cabin/Ultra-1.png',
-    level: '豪华',
-    label: '豪华版-款式1',
-    wallBack: '304玫瑰金镜面',
-    wallLeft: '304玫瑰金发纹蚀刻',
-    wallRight: '304玫瑰金发纹蚀刻',
-    wallFront: '304玫瑰金镜面',
-    carDoor: '304玫瑰金镜面',
-    price: 3700,
+    id: 'Ultra-1', image: '/img/cabin/Ultra-1.png', level: '豪华', label: '豪华版-款式1',
+    wallBack: '304玫瑰金镜面', wallLeft: '304玫瑰金发纹蚀刻', wallRight: '304玫瑰金发纹蚀刻', wallFront: '304玫瑰金镜面', carDoor: '304玫瑰金镜面',
+    price: 3700, defaultCeilingId: 'top-4', defaultFloorId: 'grand-4',
   },
   {
-    id: 'Ultra-2',
-    image: '/img/cabin/Ultra-2.png',
-    level: '豪华',
-    label: '豪华版-款式2',
-    wallBack: '304香槟金镜面',
-    wallLeft: '304香槟金发纹蚀刻',
-    wallRight: '304香槟金发纹蚀刻',
-    wallFront: '304香槟金镜面',
-    carDoor: '304香槟金镜面',
-    price: 3700,
+    id: 'Ultra-2', image: '/img/cabin/Ultra-2.png', level: '豪华', label: '豪华版-款式2',
+    wallBack: '304香槟金镜面', wallLeft: '304香槟金发纹蚀刻', wallRight: '304香槟金发纹蚀刻', wallFront: '304香槟金镜面', carDoor: '304香槟金镜面',
+    price: 3700, defaultCeilingId: 'top-4', defaultFloorId: 'grand-4',
   },
   {
-    id: 'Ultra-3',
-    image: '/img/cabin/Ultra-3.png',
-    level: '豪华',
-    label: '豪华版-款式3',
-    wallBack: '304黑钛镜面',
-    wallLeft: '304黑钛发纹蚀刻',
-    wallRight: '304黑钛发纹蚀刻',
-    wallFront: '304黑钛镜面',
-    carDoor: '304黑钛镜面',
-    price: 4100,
+    id: 'Ultra-3', image: '/img/cabin/Ultra-3.png', level: '豪华', label: '豪华版-款式3',
+    wallBack: '304黑钛镜面', wallLeft: '304黑钛发纹蚀刻', wallRight: '304黑钛发纹蚀刻', wallFront: '304黑钛镜面', carDoor: '304黑钛镜面',
+    price: 4100, defaultCeilingId: 'top-4', defaultFloorId: 'grand-5',
   },
 ]
 
@@ -450,6 +388,38 @@ export const OPTIONAL_ITEMS: QuoteOption[] = [
 ]
 
 // ============================================================
+// COP（轿厢操作盘）预设
+// ============================================================
+export interface COPPreset {
+  id: string
+  image: string
+  label: string
+  price: number
+}
+
+export const COP_PRESETS: COPPreset[] = [
+  { id: 'COP-1', image: '/img/cabin/COP-1.png', label: 'COP款式1', price: 0 },
+  { id: 'COP-2', image: '/img/cabin/COP-2.png', label: 'COP款式2', price: 0 },
+  { id: 'COP-3', image: '/img/cabin/COP-3.png', label: 'COP款式3', price: 0 },
+]
+
+// ============================================================
+// LOP（层站召唤盒）预设
+// ============================================================
+export interface LOPPreset {
+  id: string
+  image: string
+  label: string
+  price: number
+}
+
+export const LOP_PRESETS: LOPPreset[] = [
+  { id: 'LOP-1', image: '/img/cabin/LOP-1.png', label: 'LOP款式1', price: 0 },
+  { id: 'LOP-2', image: '/img/cabin/LOP-2.png', label: 'LOP款式2', price: 0 },
+  { id: 'LOP-3', image: '/img/cabin/LOP-3.png', label: 'LOP款式3', price: 0 },
+]
+
+// ============================================================
 // 扶手（不加价）
 // ============================================================
 export const HANDRAIL_OPTIONS: QuoteOption[] = [
@@ -487,7 +457,13 @@ export interface QuoteSelections {
 
   // 召唤
   display: string
+  copPresetId: string
+  lopPresetId: string
   callBoxStyle: string
+  displayRemarks: string
+  displayRefImages: string[]
+  ceilingRemarks: string
+  floorRemarks: string
 
   // 选配
   optionals: string[]
@@ -503,12 +479,15 @@ export interface PriceBreakdown {
   floorPrice: number
   doorOpeningPrice: number
   cabinPresetPrice: number
+  wallCarDoorAdjustment: number  // 四壁+轿门材料差价（用户修改后的材料费 - 预设材料费）
   ceilingPresetPrice: number
   floorPresetPrice: number
   doorPresetPrice: number
+  copPrice: number
+  lopPrice: number
   displayPrice: number
   optionalPrice: number
-  hasCustomDecoration: boolean  // 轿厢或门厅有自定义备注/图片
+  hasCustomDecoration: boolean
   total: number
 }
 
@@ -542,6 +521,23 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
   const cabinPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
   const cabinPresetPrice = cabinPreset?.price ?? 0
 
+  // 四壁+轿门材料差价 = (当前材料总价) - (预设材料总价)
+  // 预设墙板材料费
+  const presetWallCarDoorPrice =
+    (DECORATION_MATERIAL_MAP.get(cabinPreset?.wallBack ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(cabinPreset?.wallLeft ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(cabinPreset?.wallRight ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(cabinPreset?.wallFront ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(cabinPreset?.carDoor ?? '')?.price ?? 0)
+  // 用户选择墙板材料费
+  const selectedWallCarDoorPrice =
+    (DECORATION_MATERIAL_MAP.get(selections.wallBack ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(selections.wallLeft ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(selections.wallRight ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(selections.wallFront ?? '')?.price ?? 0) +
+    (DECORATION_MATERIAL_MAP.get(selections.carDoor ?? '')?.price ?? 0)
+  const wallCarDoorAdjustment = selectedWallCarDoorPrice - presetWallCarDoorPrice
+
   // 吊顶预设
   const ceilingPreset = CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)
   const ceilingPresetPrice = ceilingPreset?.price ?? 0
@@ -558,7 +554,9 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
   // 是否有自定义装潢备注/图片
   const hasCustomDecoration =
     !!(selections.cabinRemarks || selections.cabinRefImages?.length ||
-      selections.doorRemarks || selections.doorRefImages?.length)
+      selections.doorRemarks || selections.doorRefImages?.length ||
+      selections.displayRemarks || selections.displayRefImages?.length ||
+      selections.ceilingRemarks || selections.floorRemarks)
 
   // 显示板
   const displayPrice = DISPLAY_OPTIONS.find(o => o.name === selections.display)?.price ?? 0
@@ -583,6 +581,7 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
     floorPrice,
     doorOpeningPrice,
     cabinPresetPrice,
+    wallCarDoorAdjustment,
     ceilingPresetPrice,
     floorPresetPrice,
     doorPresetPrice,
@@ -611,7 +610,13 @@ export const DEFAULT_SELECTIONS: QuoteSelections = {
   doorRemarks: '',
   doorRefImages: [],
   display: '6.4寸蓝底白字',
+  copPresetId: 'COP-1',
+  lopPresetId: 'LOP-1',
   callBoxStyle: '挂壁式',
+  displayRemarks: '',
+  displayRefImages: [],
+  ceilingRemarks: '',
+  floorRemarks: '',
   optionals: [],
   remarks: '',
 }

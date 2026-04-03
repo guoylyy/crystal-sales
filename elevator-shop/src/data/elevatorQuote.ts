@@ -137,16 +137,24 @@ export const DOOR_MACHINE_OPTIONS: QuoteGroup = {
 
 // ============================================================
 // 开门方式
-// 中分 ¥0，其他全部 +¥2000
+// 价格 = basePrice + perFloorPrice × (层数-1)
+// 中分: ¥0
+// 旁开/旁开双折: base ¥750 + ¥350/层
+// 旁开三折: base ¥1500 + ¥800/层
 // ============================================================
-export const DOOR_OPENING_OPTIONS: QuoteOption[] = [
-  { name: '中分',           nameEn: 'Centre Open',       price: 0 },
-  { name: '旁开',           nameEn: 'Side Open',          price: 2000 },
-  { name: '旁开双折-左开',  nameEn: 'Side 2-fold Left',   price: 2000 },
-  { name: '旁开双折-右开',  nameEn: 'Side 2-fold Right',  price: 2000 },
-  { name: '中分双折',       nameEn: 'Centre 2-speed',     price: 2000 },
-  { name: '旁开三折-左开',  nameEn: 'Side 3-fold Left',   price: 2000 },
-  { name: '旁开三折-右开',  nameEn: 'Side 3-fold Right',  price: 2000 },
+export interface DoorOpeningOption extends QuoteOption {
+  basePrice: number   // 一次性加价
+  perFloorPrice: number // 每层加价
+}
+
+export const DOOR_OPENING_OPTIONS: DoorOpeningOption[] = [
+  { name: '中分',           nameEn: 'Centre Open',      price: 0,     basePrice: 0,    perFloorPrice: 0    },
+  { name: '旁开',           nameEn: 'Side Open',         price: 750,   basePrice: 750,  perFloorPrice: 350  },
+  { name: '旁开双折-左开',  nameEn: 'Side 2-fold Left',  price: 750,   basePrice: 750,  perFloorPrice: 350  },
+  { name: '旁开双折-右开',  nameEn: 'Side 2-fold Right', price: 750,   basePrice: 750,  perFloorPrice: 350  },
+  { name: '中分双折',       nameEn: 'Centre 2-speed',    price: 750,   basePrice: 750,  perFloorPrice: 350  },
+  { name: '旁开三折-左开',  nameEn: 'Side 3-fold Left',  price: 1500,  basePrice: 1500, perFloorPrice: 800  },
+  { name: '旁开三折-右开',  nameEn: 'Side 3-fold Right', price: 1500,  basePrice: 1500, perFloorPrice: 800  },
 ]
 
 // ============================================================
@@ -261,11 +269,16 @@ export const CAR_BOTTOM_OPTIONS: QuoteOption[] = [
 ]
 
 // ============================================================
-// 吊顶（不加价）
+// 吊顶（按型号计价）
 // ============================================================
 export const CEILING_OPTIONS: QuoteOption[] = [
-  { name: '标准吊顶',     nameEn: 'Standard',      price: 0 },
-  { name: '豪华吊顶',     nameEn: 'Luxury',        price: 0 },
+  { name: '标准吊顶A',   nameEn: 'Standard A',    price: 0 },
+  { name: '标准吊顶B',   nameEn: 'Standard B',    price: 0 },
+  { name: '豪华吊顶A',   nameEn: 'Luxury A',      price: 0 },
+  { name: '豪华吊顶B',   nameEn: 'Luxury B',      price: 0 },
+  { name: '豪华吊顶C',   nameEn: 'Luxury C',      price: 0 },
+  { name: '至尊吊顶A',   nameEn: 'Premium A',     price: 0 },
+  { name: '至尊吊顶B',   nameEn: 'Premium B',     price: 0 },
 ]
 
 // ============================================================
@@ -341,8 +354,18 @@ export interface QuoteSelections {
   wallRight: string      // 右侧壁
   wallFront: string      // 前壁
   carBottom: string      // 轿底
-  ceiling: string       // 吊顶
+  ceiling: string        // 吊顶
   handrail: string       // 扶手
+  // 自定义装潢（优先于下拉选项）
+  wallBackCustom: string
+  wallLeftCustom: string
+  wallRightCustom: string
+  wallFrontCustom: string
+  carDoorCustom: string
+  hallDoorBaseCustom: string
+  hallDoorOtherCustom: string
+  doorFrameBaseCustom: string
+  doorFrameOtherCustom: string
 
   // 门装饰
   carDoor: string        // 轿门
@@ -358,6 +381,9 @@ export interface QuoteSelections {
 
   // 选配
   optionals: string[]   // 选配功能列表
+
+  // 备注
+  remarks: string       // 客户备注
 }
 
 export interface PriceBreakdown {
@@ -369,7 +395,10 @@ export interface PriceBreakdown {
   controllerPrice: number
   doorMachinePrice: number
   doorOpeningPrice: number
+  doorOpeningBase: number
+  doorOpeningPerFloor: number
   decorationPrice: number
+  decorationHasCustom: boolean  // 是否有自定义装潢
   displayPrice: number
   callBoxPrice: number
   optionalPrice: number
@@ -410,25 +439,35 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
   const controllerPrice = CONTROLLER_OPTIONS.options.find(o => o.name === selections.controller)?.price ?? 0
   const doorMachinePrice = DOOR_MACHINE_OPTIONS.options.find(o => o.name === selections.doorMachine)?.price ?? 0
 
-  // 开门方式
-  const doorOpeningPrice = DOOR_OPENING_OPTIONS.find(o => o.name === selections.doorOpening)?.price ?? 0
-
-  // 装潢计算
-  const wallBackPrice   = DECORATION_MATERIAL_MAP.get(selections.wallBack)?.price ?? 0
-  const wallLeftPrice   = DECORATION_MATERIAL_MAP.get(selections.wallLeft)?.price ?? 0
-  const wallRightPrice  = DECORATION_MATERIAL_MAP.get(selections.wallRight)?.price ?? 0
-  const wallFrontPrice  = DECORATION_MATERIAL_MAP.get(selections.wallFront)?.price ?? 0
-  const carBottomPrice  = CAR_BOTTOM_OPTIONS.find(o => o.name === selections.carBottom)?.price ?? 0
-  const ceilingPrice    = CEILING_OPTIONS.find(o => o.name === selections.ceiling)?.price ?? 0
-  const handrailPrice   = HANDRAIL_OPTIONS.find(o => o.name === selections.handrail)?.price ?? 0
-
-  // 门装饰（厅门其余层和小门套其余层按 层数-1 计算）
+  // 开门方式 = base + perFloor × (层数-1)
+  const doorOpt = DOOR_OPENING_OPTIONS.find(o => o.name === selections.doorOpening)
+  const doorOpeningBase = doorOpt?.basePrice ?? 0
+  const doorOpeningPerFloor = doorOpt?.perFloorPrice ?? 0
   const otherFloors = Math.max(0, floorCount - 1)
-  const carDoorPrice      = DECORATION_MATERIAL_MAP.get(selections.carDoor)?.price ?? 0
-  const hallDoorBasePrice = DECORATION_MATERIAL_MAP.get(selections.hallDoorBase)?.price ?? 0
-  const hallDoorOtherPrice = (DECORATION_MATERIAL_MAP.get(selections.hallDoorOther)?.price ?? 0) * otherFloors
-  const doorFrameBasePrice = DECORATION_MATERIAL_MAP.get(selections.doorFrameBase)?.price ?? 0
-  const doorFrameOtherPrice = (DECORATION_MATERIAL_MAP.get(selections.doorFrameOther)?.price ?? 0) * otherFloors
+  const doorOpeningPrice = doorOpeningBase + doorOpeningPerFloor * otherFloors
+
+  // 装潢计算（支持自定义）
+  const wallBackPrice    = selections.wallBackCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.wallBack)?.price ?? 0)
+  const wallLeftPrice    = selections.wallLeftCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.wallLeft)?.price ?? 0)
+  const wallRightPrice   = selections.wallRightCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.wallRight)?.price ?? 0)
+  const wallFrontPrice   = selections.wallFrontCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.wallFront)?.price ?? 0)
+  const carBottomPrice   = CAR_BOTTOM_OPTIONS.find(o => o.name === selections.carBottom)?.price ?? 0
+  const ceilingPrice     = CEILING_OPTIONS.find(o => o.name === selections.ceiling)?.price ?? 0
+  const handrailPrice    = HANDRAIL_OPTIONS.find(o => o.name === selections.handrail)?.price ?? 0
+
+  // 门装饰（支持自定义）
+  const carDoorPrice       = selections.carDoorCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.carDoor)?.price ?? 0)
+  const hallDoorBasePrice  = selections.hallDoorBaseCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.hallDoorBase)?.price ?? 0)
+  const hallDoorOtherPrice = selections.hallDoorOtherCustom ? 0 : ((DECORATION_MATERIAL_MAP.get(selections.hallDoorOther)?.price ?? 0) * otherFloors)
+  const doorFrameBasePrice = selections.doorFrameBaseCustom ? 0 : (DECORATION_MATERIAL_MAP.get(selections.doorFrameBase)?.price ?? 0)
+  const doorFrameOtherPrice = selections.doorFrameOtherCustom ? 0 : ((DECORATION_MATERIAL_MAP.get(selections.doorFrameOther)?.price ?? 0) * otherFloors)
+
+  // 是否有自定义装潢
+  const decorationHasCustom = !!(
+    selections.wallBackCustom || selections.wallLeftCustom || selections.wallRightCustom || selections.wallFrontCustom ||
+    selections.carDoorCustom || selections.hallDoorBaseCustom || selections.hallDoorOtherCustom ||
+    selections.doorFrameBaseCustom || selections.doorFrameOtherCustom
+  )
 
   const decorationPrice =
     wallBackPrice + wallLeftPrice + wallRightPrice + wallFrontPrice +
@@ -463,7 +502,10 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
     controllerPrice,
     doorMachinePrice,
     doorOpeningPrice,
+    doorOpeningBase,
+    doorOpeningPerFloor,
     decorationPrice,
+    decorationHasCustom,
     displayPrice,
     callBoxPrice,
     optionalPrice,
@@ -488,8 +530,18 @@ export const DEFAULT_SELECTIONS: QuoteSelections = {
   wallRight: '201发纹',
   wallFront: '201发纹',
   carBottom: 'PVC',
-  ceiling: '标准吊顶',
+  ceiling: '标准吊顶A',
   handrail: '不发纹扶手',
+
+  wallBackCustom: '',
+  wallLeftCustom: '',
+  wallRightCustom: '',
+  wallFrontCustom: '',
+  carDoorCustom: '',
+  hallDoorBaseCustom: '',
+  hallDoorOtherCustom: '',
+  doorFrameBaseCustom: '',
+  doorFrameOtherCustom: '',
 
   carDoor: '201发纹',
   hallDoorBase: '201发纹',
@@ -502,4 +554,6 @@ export const DEFAULT_SELECTIONS: QuoteSelections = {
   callBoxPanel: '钢板喷涂色',
 
   optionals: [],
+
+  remarks: '',
 }

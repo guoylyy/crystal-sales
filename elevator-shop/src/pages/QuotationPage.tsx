@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown } from 'lucide-react'
+import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle } from 'lucide-react'
 import {
   calculatePrice,
   type QuoteSelections,
@@ -29,18 +29,18 @@ function SelectButton({
   value,
   onChange,
   unit = '¥',
+  showPrice = true,
 }: {
   label: string
   options: { name: string; nameEn: string; price: number }[]
   value: string
   onChange: (v: string) => void
   unit?: string
+  showPrice?: boolean
 }) {
   return (
-    <div className="mb-5">
-      <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-1">
-        {label}
-      </h3>
+    <div className="mb-4">
+      <h3 className="text-sm font-semibold text-gray-700 mb-2">{label}</h3>
       <div className="flex flex-wrap gap-2">
         {options.map(opt => {
           const selected = value === opt.name
@@ -55,7 +55,7 @@ function SelectButton({
               }`}
             >
               <div className="text-xs">{opt.name}</div>
-              {opt.price !== 0 && (
+              {showPrice && opt.price !== 0 && (
                 <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
                   {opt.price > 0 ? '+' : ''}{unit}{opt.price.toLocaleString()}
                 </div>
@@ -80,10 +80,40 @@ function SectionCard({ title, icon: Icon, children }: { title: string; icon: any
   )
 }
 
+function CustomInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="mb-3">
+      <label className="block text-xs font-medium text-gray-500 mb-1">
+        自定义 {label}
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={`输入自定义${label}...`}
+        className="w-full px-3 py-1.5 border border-dashed border-orange-400 rounded-lg text-sm bg-orange-50 focus:outline-none focus:border-orange-500"
+      />
+      <div className="flex items-center gap-1 mt-1">
+        <AlertTriangle size={10} className="text-orange-500" />
+        <span className="text-xs text-orange-600">价格需业务员确认</span>
+      </div>
+    </div>
+  )
+}
+
 export default function QuotationPage() {
   const [selections, setSelections] = useState<QuoteSelections>(DEFAULT_SELECTIONS)
   const [showQuote, setShowQuote] = useState(false)
   const [showAllFloors, setShowAllFloors] = useState(false)
+  const [submitWarning, setSubmitWarning] = useState(false)
 
   const breakdown = calculatePrice(selections)
 
@@ -100,7 +130,17 @@ export default function QuotationPage() {
     }
   }
 
-  const floorOptions = showAllFloors ? FLOOR_OPTIONS : FLOOR_OPTIONS.slice(0, 9) // 默认显示2-10层
+  const floorCount = parseInt(selections.floors.match(/\d+/)?.[0] || '10')
+  const otherFloors = Math.max(0, floorCount - 1)
+  const floorOptions = showAllFloors ? FLOOR_OPTIONS : FLOOR_OPTIONS.slice(0, 9)
+
+  const handleSubmitQuote = () => {
+    if (breakdown.decorationHasCustom) {
+      setSubmitWarning(true)
+      return
+    }
+    setShowQuote(true)
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -191,95 +231,140 @@ export default function QuotationPage() {
 
             {/* 开门方式 */}
             <SectionCard title="开门方式" icon={Settings}>
-              <SelectButton
-                label="开门方式 (Door Opening)"
-                options={DOOR_OPENING_OPTIONS}
-                value={selections.doorOpening}
-                onChange={v => update('doorOpening', v)}
-              />
+              <div className="mb-2">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">开门方式 (Door Opening)</h3>
+                <div className="flex flex-wrap gap-2">
+                  {DOOR_OPENING_OPTIONS.map(opt => {
+                    const selected = selections.doorOpening === opt.name
+                    const totalPrice = opt.basePrice + opt.perFloorPrice * otherFloors
+                    return (
+                      <button
+                        key={opt.name}
+                        onClick={() => update('doorOpening', opt.name)}
+                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          selected
+                            ? 'border-blue-600 bg-blue-50 text-blue-700'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                        }`}
+                      >
+                        <div className="text-xs">{opt.name}</div>
+                        {opt.basePrice > 0 && (
+                          <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                            +¥{opt.basePrice}
+                            {opt.perFloorPrice > 0 && ` + ¥${opt.perFloorPrice}×${otherFloors}层`}
+                          </div>
+                        )}
+                        {selected && opt.perFloorPrice > 0 && (
+                          <div className="text-xs text-blue-400">=¥{totalPrice.toLocaleString()}</div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+              <div className="text-xs text-gray-400 bg-gray-50 rounded px-3 py-2">
+                注：旁开门机 +¥750/层+¥350， 三折门机 +¥1500/层+¥800
+              </div>
             </SectionCard>
 
             {/* 轿厢装潢 */}
             <SectionCard title="轿厢装潢" icon={Star}>
-              <DecorationSelect
-                label="后壁"
-                value={selections.wallBack}
-                onChange={v => update('wallBack', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label="左侧壁"
-                value={selections.wallLeft}
-                onChange={v => update('wallLeft', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label="右侧壁"
-                value={selections.wallRight}
-                onChange={v => update('wallRight', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label="前壁"
-                value={selections.wallFront}
-                onChange={v => update('wallFront', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <SelectButton
-                label="轿底材质"
-                options={CAR_BOTTOM_OPTIONS}
-                value={selections.carBottom}
-                onChange={v => update('carBottom', v)}
-              />
-              <SelectButton
-                label="吊顶"
-                options={CEILING_OPTIONS}
-                value={selections.ceiling}
-                onChange={v => update('ceiling', v)}
-              />
-              <SelectButton
-                label="扶手"
-                options={HANDRAIL_OPTIONS}
-                value={selections.handrail}
-                onChange={v => update('handrail', v)}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <DecorationSelect
+                    label="后壁"
+                    value={selections.wallBack}
+                    onChange={v => update('wallBack', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="后壁" value={selections.wallBackCustom} onChange={v => update('wallBackCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label="左侧壁"
+                    value={selections.wallLeft}
+                    onChange={v => update('wallLeft', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="左侧壁" value={selections.wallLeftCustom} onChange={v => update('wallLeftCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label="右侧壁"
+                    value={selections.wallRight}
+                    onChange={v => update('wallRight', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="右侧壁" value={selections.wallRightCustom} onChange={v => update('wallRightCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label="前壁"
+                    value={selections.wallFront}
+                    onChange={v => update('wallFront', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="前壁" value={selections.wallFrontCustom} onChange={v => update('wallFrontCustom', v)} />
+                </div>
+              </div>
+
+              <SelectButton label="轿底材质" options={CAR_BOTTOM_OPTIONS} value={selections.carBottom} onChange={v => update('carBottom', v)} />
+
+              <SelectButton label="吊顶" options={CEILING_OPTIONS} value={selections.ceiling} onChange={v => update('ceiling', v)} />
+
+              <SelectButton label="扶手" options={HANDRAIL_OPTIONS} value={selections.handrail} onChange={v => update('handrail', v)} />
             </SectionCard>
 
             {/* 门装饰 */}
             <SectionCard title="门装饰" icon={Star}>
-              <DecorationSelect
-                label="轿门"
-                value={selections.carDoor}
-                onChange={v => update('carDoor', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label="厅门 - 基站层（第1层）"
-                value={selections.hallDoorBase}
-                onChange={v => update('hallDoorBase', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label={`厅门 - 其余层（第2层~顶层，×${Math.max(0, parseInt(selections.floors.match(/\d+/)?.[0] || '10') - 1)}次）`}
-                value={selections.hallDoorOther}
-                onChange={v => update('hallDoorOther', v)}
-                materials={DECORATION_MATERIALS}
-              />
-              <DecorationSelect
-                label="小门套 - 基站层"
-                value={selections.doorFrameBase}
-                onChange={v => update('doorFrameBase', v)}
-                materials={DECORATION_MATERIALS}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <DecorationSelect
+                    label="轿门"
+                    value={selections.carDoor}
+                    onChange={v => update('carDoor', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="轿门" value={selections.carDoorCustom} onChange={v => update('carDoorCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label="厅门 - 基站层（第1层）"
+                    value={selections.hallDoorBase}
+                    onChange={v => update('hallDoorBase', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="厅门-基站层" value={selections.hallDoorBaseCustom} onChange={v => update('hallDoorBaseCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label={`厅门 - 其余层（第2~顶层，×${otherFloors}次）`}
+                    value={selections.hallDoorOther}
+                    onChange={v => update('hallDoorOther', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="厅门-其余层" value={selections.hallDoorOtherCustom} onChange={v => update('hallDoorOtherCustom', v)} />
+                </div>
+                <div>
+                  <DecorationSelect
+                    label="小门套 - 基站层"
+                    value={selections.doorFrameBase}
+                    onChange={v => update('doorFrameBase', v)}
+                    materials={DECORATION_MATERIALS}
+                  />
+                  <CustomInput label="小门套-基站层" value={selections.doorFrameBaseCustom} onChange={v => update('doorFrameBaseCustom', v)} />
+                </div>
+              </div>
               <DecorationSelect
                 label="小门套 - 其余层"
                 value={selections.doorFrameOther}
                 onChange={v => update('doorFrameOther', v)}
                 materials={DECORATION_MATERIALS}
               />
+              <CustomInput label="小门套-其余层" value={selections.doorFrameOtherCustom} onChange={v => update('doorFrameOtherCustom', v)} />
             </SectionCard>
 
-            {/* 显示板 & 召唤盒 */}
+            {/* 显示与召唤 */}
             <SectionCard title="显示与召唤" icon={Star}>
               <SelectButton
                 label="显示板"
@@ -326,6 +411,17 @@ export default function QuotationPage() {
                 })}
               </div>
             </SectionCard>
+
+            {/* 备注 */}
+            <SectionCard title="备注" icon={Star}>
+              <textarea
+                value={selections.remarks}
+                onChange={e => update('remarks', e.target.value)}
+                placeholder="填写客户特殊需求、备注信息..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
+              />
+            </SectionCard>
           </div>
 
           {/* Right - Summary */}
@@ -358,6 +454,12 @@ export default function QuotationPage() {
                   <span className="text-gray-500">显示板：</span>
                   <span className="font-medium">{selections.display}</span>
                 </div>
+                {breakdown.decorationHasCustom && (
+                  <div className="flex items-center gap-1 text-orange-600 text-xs mt-1">
+                    <AlertTriangle size={12} />
+                    <span>含自定义装潢，需确认价格</span>
+                  </div>
+                )}
               </div>
 
               {/* 价格明细 */}
@@ -420,14 +522,23 @@ export default function QuotationPage() {
               <div className="mb-5">
                 <div className="text-xs text-gray-500 mb-0.5">预估价格</div>
                 <div className="text-3xl font-bold text-blue-600">¥{breakdown.total.toLocaleString()}</div>
-                <div className="text-xs text-gray-400">*最终价格以实际方案为准</div>
+                {breakdown.decorationHasCustom && (
+                  <div className="text-xs text-orange-500 mt-1">*含自定义装潢，价格需确认</div>
+                )}
+                {!breakdown.decorationHasCustom && (
+                  <div className="text-xs text-gray-400">*最终价格以实际方案为准</div>
+                )}
               </div>
 
               {/* 操作按钮 */}
               <div className="space-y-2">
                 <button
-                  onClick={() => setShowQuote(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition text-sm"
+                  onClick={handleSubmitQuote}
+                  className={`w-full py-2.5 rounded-lg font-medium transition text-sm ${
+                    breakdown.decorationHasCustom
+                      ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
                 >
                   查看详细报价
                 </button>
@@ -456,8 +567,40 @@ export default function QuotationPage() {
         </div>
       </div>
 
+      {/* Custom decoration warning modal */}
+      {submitWarning && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <AlertTriangle size={24} className="text-orange-500" />
+              <h2 className="text-lg font-bold text-gray-900">自定义装潢需确认</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-2">
+              您已填写自定义装潢内容，系统无法自动计算价格。
+            </p>
+            <p className="text-sm text-gray-600 mb-6">
+              请确认后提交询价，业务员将与您联系确认最终价格。
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setSubmitWarning(false)}
+                className="flex-1 border border-gray-300 py-2.5 rounded-lg font-medium text-sm"
+              >
+                返回修改
+              </button>
+              <button
+                onClick={() => { setSubmitWarning(false); setShowQuote(true) }}
+                className="flex-1 bg-orange-600 hover:bg-orange-700 text-white py-2.5 rounded-lg font-medium text-sm"
+              >
+                确认提交
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quote Modal */}
-      {showQuote && (
+      {showQuote && !submitWarning && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
             <h2 className="text-xl font-bold text-gray-900 mb-4">详细报价单</h2>
@@ -473,7 +616,12 @@ export default function QuotationPage() {
                   <div className="flex justify-between"><span>曳引机：</span><span>{selections.traction}</span></div>
                   <div className="flex justify-between"><span>控制系统：</span><span>{selections.controller}</span></div>
                   <div className="flex justify-between"><span>门机：</span><span>{selections.doorMachine}</span></div>
-                  <div className="flex justify-between"><span>开门方式：</span><span>{selections.doorOpening}</span></div>
+                  <div className="flex justify-between">
+                    <span>开门方式：</span>
+                    <span>{selections.doorOpening}
+                      {breakdown.doorOpeningPrice > 0 && ` (+¥${breakdown.doorOpeningPrice.toLocaleString()})`}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -481,16 +629,52 @@ export default function QuotationPage() {
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="font-semibold text-gray-800 mb-2">装潢配置</div>
                 <div className="text-sm space-y-1">
-                  <div className="flex justify-between"><span>后壁：</span><span>{selections.wallBack}</span></div>
-                  <div className="flex justify-between"><span>左侧壁：</span><span>{selections.wallLeft}</span></div>
-                  <div className="flex justify-between"><span>右侧壁：</span><span>{selections.wallRight}</span></div>
-                  <div className="flex justify-between"><span>前壁：</span><span>{selections.wallFront}</span></div>
+                  {selections.wallBackCustom ? (
+                    <div className="flex justify-between text-orange-600">
+                      <span>后壁：</span><span>自定义: {selections.wallBackCustom} (需确认)</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between"><span>后壁：</span><span>{selections.wallBack}</span></div>
+                  )}
+                  {selections.wallLeftCustom ? (
+                    <div className="flex justify-between text-orange-600">
+                      <span>左侧壁：</span><span>自定义: {selections.wallLeftCustom} (需确认)</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between"><span>左侧壁：</span><span>{selections.wallLeft}</span></div>
+                  )}
+                  {selections.wallRightCustom ? (
+                    <div className="flex justify-between text-orange-600">
+                      <span>右侧壁：</span><span>自定义: {selections.wallRightCustom} (需确认)</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between"><span>右侧壁：</span><span>{selections.wallRight}</span></div>
+                  )}
+                  {selections.wallFrontCustom ? (
+                    <div className="flex justify-between text-orange-600">
+                      <span>前壁：</span><span>自定义: {selections.wallFrontCustom} (需确认)</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between"><span>前壁：</span><span>{selections.wallFront}</span></div>
+                  )}
                   <div className="flex justify-between"><span>轿底：</span><span>{selections.carBottom}</span></div>
                   <div className="flex justify-between"><span>吊顶：</span><span>{selections.ceiling}</span></div>
                   <div className="flex justify-between"><span>扶手：</span><span>{selections.handrail}</span></div>
-                  <div className="flex justify-between"><span>轿门：</span><span>{selections.carDoor}</span></div>
-                  <div className="flex justify-between"><span>厅门(基站)：</span><span>{selections.hallDoorBase}</span></div>
-                  <div className="flex justify-between"><span>厅门(其余层)：</span><span>{selections.hallDoorOther}</span></div>
+                  {selections.carDoorCustom ? (
+                    <div className="flex justify-between text-orange-600"><span>轿门：</span><span>自定义: {selections.carDoorCustom} (需确认)</span></div>
+                  ) : (
+                    <div className="flex justify-between"><span>轿门：</span><span>{selections.carDoor}</span></div>
+                  )}
+                  {selections.hallDoorBaseCustom ? (
+                    <div className="flex justify-between text-orange-600"><span>厅门(基站)：</span><span>自定义 (需确认)</span></div>
+                  ) : (
+                    <div className="flex justify-between"><span>厅门(基站)：</span><span>{selections.hallDoorBase}</span></div>
+                  )}
+                  {selections.hallDoorOtherCustom ? (
+                    <div className="flex justify-between text-orange-600"><span>厅门(其余层)：</span><span>自定义 (需确认)</span></div>
+                  ) : (
+                    <div className="flex justify-between"><span>厅门(其余层)：</span><span>{selections.hallDoorOther}</span></div>
+                  )}
                   <div className="flex justify-between"><span>显示板：</span><span>{selections.display}</span></div>
                 </div>
               </div>
@@ -513,12 +697,23 @@ export default function QuotationPage() {
                 </div>
               )}
 
+              {/* 备注 */}
+              {selections.remarks && (
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <div className="font-semibold text-gray-800 mb-2">备注</div>
+                  <div className="text-sm text-gray-600">{selections.remarks}</div>
+                </div>
+              )}
+
               {/* 价格 */}
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between text-xl font-bold">
                   <span>总计：</span>
                   <span className="text-blue-600">¥{breakdown.total.toLocaleString()}</span>
                 </div>
+                {breakdown.decorationHasCustom && (
+                  <div className="text-xs text-orange-500 mt-1 text-right">*含自定义装潢，价格以最终确认结果为准</div>
+                )}
               </div>
             </div>
 

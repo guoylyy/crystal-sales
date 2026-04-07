@@ -121,16 +121,31 @@ function ImageSelector<T extends { id: string; image: string; label: string; pri
   selectedId,
   onSelect,
   sideContent,
+  toggleable,
+  emptyPlaceholder,
 }: {
   title: string
   items: T[]
   selectedId: string
   onSelect: (id: string) => void
   sideContent?: React.ReactNode
+  /** 是否支持重复点击取消选择（回到空选中状态） */
+  toggleable?: boolean
+  /** 未选中时主图区域的占位文字 */
+  emptyPlaceholder?: string
 }) {
   const [lightboxImg, setLightboxImg] = useState<{ src: string; alt: string } | null>(null)
 
-  const selectedItem = items.find(i => i.id === selectedId) ?? items[0]
+  const selectedItem = items.find(i => i.id === selectedId)
+
+  const handleItemClick = (id: string) => {
+    if (toggleable && selectedId === id) {
+      // 重复点击已选项 → 取消选择
+      onSelect('')
+    } else {
+      onSelect(id)
+    }
+  }
 
   return (
     <div className="mb-5">
@@ -146,7 +161,7 @@ function ImageSelector<T extends { id: string; image: string; label: string; pri
             return (
               <button
                 key={item.id}
-                onClick={() => onSelect(item.id)}
+                onClick={() => handleItemClick(item.id)}
                 className={`relative w-full rounded-lg overflow-hidden border-2 transition-all text-left flex-shrink-0 ${
                   selected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-400'
                 }`}
@@ -179,32 +194,42 @@ function ImageSelector<T extends { id: string; image: string; label: string; pri
 
         {/* 中间：主图 */}
         <div className="flex-shrink-0" style={{ width: 280 }}>
-          {selectedItem && (
-            <div className="relative rounded-xl overflow-hidden border-2 border-blue-200 bg-gray-100 group cursor-pointer"
-              style={{ width: 280, height: 280 }}
-              onClick={() => setLightboxImg({ src: selectedItem.image, alt: selectedItem.label })}
-            >
-              <img
-                src={selectedItem.image}
-                alt={selectedItem.label}
-                className="w-full h-full object-cover"
-                onError={e => {
-                  ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><rect fill='%23e5e7eb' width='280' height='280'/><text x='140' y='145' text-anchor='middle' fill='%239ca3af' font-size='16'>${selectedItem.label}</text></svg>`
-                }}
-              />
-              {/* 放大提示遮罩 */}
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <ZoomIn size={40} className="text-white" />
+          {selectedItem ? (
+            <>
+              <div className="relative rounded-xl overflow-hidden border-2 border-blue-200 bg-gray-100 group cursor-pointer"
+                style={{ width: 280, height: 280 }}
+                onClick={() => setLightboxImg({ src: selectedItem.image, alt: selectedItem.label })}
+              >
+                <img
+                  src={selectedItem.image}
+                  alt={selectedItem.label}
+                  className="w-full h-full object-cover"
+                  onError={e => {
+                    ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><rect fill='%23e5e7eb' width='280' height='280'/><text x='140' y='145' text-anchor='middle' fill='%239ca3af' font-size='16'>${selectedItem.label}</text></svg>`
+                  }}
+                />
+                {/* 放大提示遮罩 */}
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <ZoomIn size={40} className="text-white" />
+                </div>
               </div>
-            </div>
-          )}
-          {selectedItem && (
-            <div className="text-center mt-1.5">
-              <div className="text-sm font-semibold text-blue-600 truncate">{selectedItem.label}</div>
-              {(selectedItem.price ?? 0) > 0 && (
-                <div className="text-xs text-orange-500">+¥{(selectedItem.price ?? 0).toLocaleString()}</div>
-              )}
-              <div className="text-xs text-gray-400 mt-0.5">点击可放大查看</div>
+              <div className="text-center mt-1.5">
+                <div className="text-sm font-semibold text-blue-600 truncate">{selectedItem.label}</div>
+                {(selectedItem.price ?? 0) > 0 && (
+                  <div className="text-xs text-orange-500">+¥{(selectedItem.price ?? 0).toLocaleString()}</div>
+                )}
+                <div className="text-xs text-gray-400 mt-0.5">点击可放大查看</div>
+              </div>
+            </>
+          ) : (
+            /* 未选择时的占位区域 */
+            <div
+              className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-gray-400"
+              style={{ width: 280, height: 280 }}
+            >
+              <div className="text-3xl mb-2">🔄</div>
+              <div className="text-sm font-medium text-gray-500">{emptyPlaceholder ?? '未选择'}</div>
+              <div className="text-xs text-gray-400 mt-1">点击左侧缩略图选择</div>
             </div>
           )}
         </div>
@@ -787,20 +812,24 @@ export default function QuotationPage() {
 
               {/* 3. 吊顶 */}
               <ImageSelector
-                title="吊顶（如需定制请选择，不选择则跟随轿厢默认）"
+                title="吊顶（如需定制请选择，不选择则跟随轿厢默认；再次点击可取消）"
                 items={CEILING_PRESETS}
                 selectedId={selections.ceilingPresetId}
                 onSelect={id => update('ceilingPresetId', id)}
                 sideContent={ceilingSideContent}
+                toggleable
+                emptyPlaceholder="跟随轿厢默认"
               />
 
               {/* 4. 地板 */}
               <ImageSelector
-                title="地板（如需定制请选择，不选择则跟随轿厢默认）"
+                title="地板（如需定制请选择，不选择则跟随轿厢默认；再次点击可取消）"
                 items={FLOOR_PRESETS}
                 selectedId={selections.floorPresetId}
                 onSelect={id => update('floorPresetId', id)}
                 sideContent={floorSideContent}
+                toggleable
+                emptyPlaceholder="跟随轿厢默认"
               />
 
               {/* 轿厢备注+参考图片 */}

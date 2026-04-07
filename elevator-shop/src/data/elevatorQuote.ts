@@ -449,6 +449,11 @@ export interface QuoteSelections {
   cabinRefImages: string[]   // 轿厢参考图片（base64或URL）
   ceilingPresetId: string    // 吊顶预设
   floorPresetId: string      // 地板预设
+  wallBack: string           // 后壁材料
+  wallLeft: string           // 左侧壁材料
+  wallRight: string          // 右侧壁材料
+  wallFront: string          // 前壁材料
+  carDoor: string            // 轿门材料
 
   // 门厅（图片选择）
   doorPresetId: string       // 门厅预设
@@ -574,6 +579,9 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
     floorPresetPrice + doorPresetPrice +
     displayPrice + optionalPrice
 
+  const copPrice = COP_PRESETS.find(p => p.id === selections.copPresetId)?.price ?? 0
+  const lopPrice = LOP_PRESETS.find(p => p.id === selections.lopPresetId)?.price ?? 0
+
   return {
     basePrice,
     loadPrice,
@@ -585,6 +593,8 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
     ceilingPresetPrice,
     floorPresetPrice,
     doorPresetPrice,
+    copPrice,
+    lopPrice,
     displayPrice,
     optionalPrice,
     hasCustomDecoration,

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle } from 'lucide-react'
+import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle, X, ZoomIn } from 'lucide-react'
 import {
   calculatePrice,
   type QuoteSelections,
@@ -82,58 +82,149 @@ function SelectButton({
 }
 
 // ============================================================
-// 图片网格选择器
+// 图片放大弹窗
+// ============================================================
+function ImageLightbox({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4"
+      onClick={onClose}
+    >
+      <div className="relative max-w-3xl max-h-[90vh] w-full" onClick={e => e.stopPropagation()}>
+        <button
+          onClick={onClose}
+          className="absolute -top-10 right-0 text-white hover:text-gray-300 transition"
+        >
+          <X size={28} />
+        </button>
+        <img
+          src={src}
+          alt={alt}
+          className="w-full h-full object-contain rounded-xl"
+          style={{ maxHeight: '85vh' }}
+          onError={e => {
+            ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400'><rect fill='%23e5e7eb' width='400' height='400'/><text x='200' y='210' text-anchor='middle' fill='%239ca3af' font-size='20'>${alt}</text></svg>`
+          }}
+        />
+        <div className="text-center text-white text-sm mt-3 opacity-75">{alt}</div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// 左侧滚动列表 + 主图 图片选择器（右侧可放额外内容）
 // ============================================================
 function ImageSelector<T extends { id: string; image: string; label: string; price?: number }>({
   title,
   items,
   selectedId,
   onSelect,
+  sideContent,
 }: {
   title: string
   items: T[]
   selectedId: string
   onSelect: (id: string) => void
+  sideContent?: React.ReactNode
 }) {
+  const [lightboxImg, setLightboxImg] = useState<{ src: string; alt: string } | null>(null)
+
+  const selectedItem = items.find(i => i.id === selectedId) ?? items[0]
+
   return (
     <div className="mb-5">
       <h3 className="text-sm font-semibold text-gray-700 mb-2">{title}</h3>
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-        {items.map(item => {
-          const selected = item.id === selectedId
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSelect(item.id)}
-              className={`relative rounded-lg overflow-hidden border-2 transition-all text-left ${
-                selected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300'
-              }`}
-            >
-              <div className="aspect-square bg-gray-100">
-                <img
-                  src={item.image}
-                  alt={item.label}
-                  className="w-full h-full object-cover"
-                  onError={e => {
-                    ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23e5e7eb' width='100' height='100'/><text x='50' y='55' text-anchor='middle' fill='%239ca3af' font-size='10'>${item.label}</text></svg>`
-                  }}
-                />
-              </div>
-              <div className="p-1.5 text-center">
-                <div className="text-xs font-medium text-gray-700 leading-tight">{item.label}</div>
-                {(item.price ?? 0) > 0 && (
-                  <div className="text-xs text-orange-500">+¥{(item.price ?? 0).toLocaleString()}</div>
-                )}
-              </div>
-              {selected && (
-                <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
-                  <Check size={10} className="text-white" />
+      <div className="flex gap-3">
+        {/* 左侧：可滚动缩略图列表（仅纵向滚动，禁止横向） */}
+        <div
+          className="flex flex-col gap-2 flex-shrink-0"
+          style={{ maxHeight: 340, width: 120, overflowY: 'auto', overflowX: 'hidden' }}
+        >
+          {items.map(item => {
+            const selected = item.id === selectedId
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelect(item.id)}
+                className={`relative w-full rounded-lg overflow-hidden border-2 transition-all text-left flex-shrink-0 ${
+                  selected ? 'border-blue-600 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                <div className="w-full bg-gray-100" style={{ height: 100 }}>
+                  <img
+                    src={item.image}
+                    alt={item.label}
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><rect fill='%23e5e7eb' width='100' height='100'/><text x='50' y='55' text-anchor='middle' fill='%239ca3af' font-size='9'>${item.label}</text></svg>`
+                    }}
+                  />
                 </div>
+                <div className="px-1 py-0.5 text-center bg-white">
+                  <div className="text-xs font-medium text-gray-700 leading-tight truncate">{item.label}</div>
+                  {(item.price ?? 0) > 0 && (
+                    <div className="text-xs text-orange-500">+¥{(item.price ?? 0).toLocaleString()}</div>
+                  )}
+                </div>
+                {selected && (
+                  <div className="absolute top-1 right-1 bg-blue-600 rounded-full p-0.5">
+                    <Check size={10} className="text-white" />
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* 中间：主图 */}
+        <div className="flex-shrink-0" style={{ width: 280 }}>
+          {selectedItem && (
+            <div className="relative rounded-xl overflow-hidden border-2 border-blue-200 bg-gray-100 group cursor-pointer"
+              style={{ width: 280, height: 280 }}
+              onClick={() => setLightboxImg({ src: selectedItem.image, alt: selectedItem.label })}
+            >
+              <img
+                src={selectedItem.image}
+                alt={selectedItem.label}
+                className="w-full h-full object-cover"
+                onError={e => {
+                  ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='280'><rect fill='%23e5e7eb' width='280' height='280'/><text x='140' y='145' text-anchor='middle' fill='%239ca3af' font-size='16'>${selectedItem.label}</text></svg>`
+                }}
+              />
+              {/* 放大提示遮罩 */}
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <ZoomIn size={40} className="text-white" />
+              </div>
+            </div>
+          )}
+          {selectedItem && (
+            <div className="text-center mt-1.5">
+              <div className="text-sm font-semibold text-blue-600 truncate">{selectedItem.label}</div>
+              {(selectedItem.price ?? 0) > 0 && (
+                <div className="text-xs text-orange-500">+¥{(selectedItem.price ?? 0).toLocaleString()}</div>
               )}
-            </button>
-          )
-        })}
+              <div className="text-xs text-gray-400 mt-0.5">点击可放大查看</div>
+            </div>
+          )}
+        </div>
+
+        {/* 右侧：额外内容（如配置选项），限制最大宽度避免过宽 */}
+        {sideContent && (
+          <div className="flex-1 min-w-0" style={{ maxWidth: 260 }}>
+            {sideContent}
+          </div>
+        )}
       </div>
+
+      {/* 放大弹窗 */}
+      {lightboxImg && (
+        <ImageLightbox
+          src={lightboxImg.src}
+          alt={lightboxImg.alt}
+          onClose={() => setLightboxImg(null)}
+        />
+      )}
     </div>
   )
 }
@@ -342,6 +433,152 @@ export default function QuotationPage() {
   const copPreset = COP_PRESETS.find(p => p.id === selections.copPresetId)
   const lopPreset = LOP_PRESETS.find(p => p.id === selections.lopPresetId)
 
+  // 轿厢四壁+轿门下拉（放在主图右侧）
+  const cabinWallSideContent = (
+    <div>
+      <div className="text-xs font-semibold text-gray-500 mb-2">四壁 &amp; 轿门（自动填充，可手动调整）</div>
+      <div className="grid grid-cols-1 gap-2">
+        {[
+          { key: 'wallBack', label: '后壁', value: wallBack },
+          { key: 'wallLeft', label: '左侧壁', value: wallLeft },
+          { key: 'wallRight', label: '右侧壁', value: wallRight },
+          { key: 'wallFront', label: '前壁', value: wallFront },
+          { key: 'carDoor', label: '轿门', value: carDoor },
+        ].map(({ key, label, value }) => (
+          <div key={key} className="flex items-center gap-1.5">
+            <label className="text-xs font-semibold text-gray-600 w-14 flex-shrink-0">{label}</label>
+            <select
+              value={value}
+              onChange={e => setWall(key, e.target.value)}
+              className="flex-1 min-w-0 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 bg-white"
+            >
+              {wallOptions.map(opt => (
+                <option key={opt.name} value={opt.name}>
+                  {opt.name} {opt.price > 0 ? `(+¥${opt.price})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+
+  // 吊顶右侧内容（显示当前选择信息）
+  const ceilingSideContent = (
+    <div className="flex flex-col justify-center h-full pt-2">
+      <div className="text-xs font-semibold text-gray-500 mb-2">当前选择</div>
+      <div className="text-sm text-blue-600 font-medium">
+        {selections.ceilingPresetId
+          ? CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)?.label
+          : '跟随轿厢默认（不加价）'}
+      </div>
+      <div className="text-xs text-gray-400 mt-1">如需定制请选择，不选择则跟随轿厢默认</div>
+    </div>
+  )
+
+  // 地板右侧内容
+  const floorSideContent = (
+    <div className="flex flex-col justify-center h-full pt-2">
+      <div className="text-xs font-semibold text-gray-500 mb-2">当前选择</div>
+      <div className="text-sm text-blue-600 font-medium">
+        {selections.floorPresetId
+          ? FLOOR_PRESETS.find(p => p.id === selections.floorPresetId)?.label
+          : '跟随轿厢默认（不加价）'}
+      </div>
+      <div className="text-xs text-gray-400 mt-1">如需定制请选择，不选择则跟随轿厢默认</div>
+      <div className="mt-3">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">地板备注</label>
+        <textarea
+          value={selections.floorRemarks ?? ''}
+          onChange={e => update('floorRemarks' as any, e.target.value)}
+          placeholder="地板备注..."
+          rows={2}
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+        />
+      </div>
+    </div>
+  )
+
+  // COP 右侧内容
+  const copSideContent = (
+    <div className="flex flex-col justify-center h-full pt-2">
+      <div className="text-xs font-semibold text-gray-500 mb-2">当前选择</div>
+      <div className="text-sm text-blue-600 font-medium">
+        {selections.copPresetId
+          ? COP_PRESETS.find(p => p.id === selections.copPresetId)?.label
+          : '未选择'}
+      </div>
+    </div>
+  )
+
+  // LOP 右侧内容
+  const lopSideContent = (
+    <div className="flex flex-col justify-center h-full pt-2">
+      <div className="text-xs font-semibold text-gray-500 mb-2">当前选择</div>
+      <div className="text-sm text-blue-600 font-medium">
+        {selections.lopPresetId
+          ? LOP_PRESETS.find(p => p.id === selections.lopPresetId)?.label
+          : '未选择'}
+      </div>
+      {/* 显示器和召唤盒放在 LOP 右侧 */}
+      <div className="mt-3 space-y-3">
+        <div>
+          <div className="text-xs font-semibold text-gray-700 mb-1">显示器</div>
+          <div className="flex flex-wrap gap-1.5">
+            {DISPLAY_OPTIONS.map(opt => {
+              const selected = selections.display === opt.name
+              return (
+                <button
+                  key={opt.name}
+                  onClick={() => update('display', opt.name)}
+                  className={`px-2 py-1 rounded-lg border-2 text-xs font-medium transition-all ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                  }`}
+                >
+                  {opt.name}
+                  {opt.price !== 0 && (
+                    <span className={`ml-1 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {opt.price > 0 ? '+' : ''}¥{opt.price.toLocaleString()}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs font-semibold text-gray-700 mb-1">召唤盒款式</div>
+          <div className="flex flex-wrap gap-1.5">
+            {CALLBOX_STYLE_OPTIONS.map(opt => {
+              const selected = selections.callBoxStyle === opt.name
+              return (
+                <button
+                  key={opt.name}
+                  onClick={() => update('callBoxStyle', opt.name)}
+                  className={`px-2 py-1 rounded-lg border-2 text-xs font-medium transition-all ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                  }`}
+                >
+                  {opt.name}
+                  {opt.price !== 0 && (
+                    <span className={`ml-1 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {opt.price > 0 ? '+' : ''}¥{opt.price.toLocaleString()}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Banner */}
@@ -430,77 +667,32 @@ export default function QuotationPage() {
                 ))}
               </div>
 
-              {/* 2. 当前版本的图片网格 */}
+              {/* 2. 左侧滚动列表 + 主图 + 右侧四壁轿门配置 */}
               <ImageSelector
                 title="选择款式（选择后四壁和轿门将自动填充，也可手动调整）"
                 items={cabinLevelPresets}
                 selectedId={selections.cabinPresetId}
                 onSelect={handleCabinSelect}
+                sideContent={cabinWallSideContent}
               />
 
-              {/* 3. 四壁+轿门下拉（可手动调整） */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                {[
-                  { key: 'wallBack', label: '后壁', value: wallBack },
-                  { key: 'wallLeft', label: '左侧壁', value: wallLeft },
-                  { key: 'wallRight', label: '右侧壁', value: wallRight },
-                  { key: 'wallFront', label: '前壁', value: wallFront },
-                  { key: 'carDoor', label: '轿门', value: carDoor },
-                ].map(({ key, label, value }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
-                    <select
-                      value={value}
-                      onChange={e => setWall(key, e.target.value)}
-                      className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 bg-white"
-                    >
-                      {wallOptions.map(opt => (
-                        <option key={opt.name} value={opt.name}>
-                          {opt.name} {opt.price > 0 ? `(+¥${opt.price})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ))}
-              </div>
-
-              {/* 4. 吊顶 */}
+              {/* 3. 吊顶 */}
               <ImageSelector
                 title="吊顶（如需定制请选择，不选择则跟随轿厢默认）"
                 items={CEILING_PRESETS}
                 selectedId={selections.ceilingPresetId}
                 onSelect={id => update('ceilingPresetId', id)}
+                sideContent={ceilingSideContent}
               />
-              <div className="text-xs text-gray-400 mb-4">
-                {selections.ceilingPresetId
-                  ? <span className="text-blue-500">已选：{CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)?.label}</span>
-                  : <span>跟随轿厢默认（不加价）</span>
-                }
-              </div>
 
-              {/* 5. 地板 */}
+              {/* 4. 地板 */}
               <ImageSelector
                 title="地板（如需定制请选择，不选择则跟随轿厢默认）"
                 items={FLOOR_PRESETS}
                 selectedId={selections.floorPresetId}
                 onSelect={id => update('floorPresetId', id)}
+                sideContent={floorSideContent}
               />
-              <div className="text-xs text-gray-400 mb-4">
-                {selections.floorPresetId
-                  ? <span className="text-blue-500">已选：{FLOOR_PRESETS.find(p => p.id === selections.floorPresetId)?.label}</span>
-                  : <span>跟随轿厢默认（不加价）</span>
-                }
-              </div>
-              {/* 地板备注 */}
-              <div className="mb-4">
-                <textarea
-                  value={selections.floorRemarks ?? ''}
-                  onChange={e => update('floorRemarks' as any, e.target.value)}
-                  placeholder="地板备注..."
-                  rows={1}
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500 resize-none"
-                />
-              </div>
 
               {/* 轿厢备注+参考图片 */}
               <DecorationModuleFooter
@@ -538,18 +730,16 @@ export default function QuotationPage() {
                 items={COP_PRESETS}
                 selectedId={selections.copPresetId}
                 onSelect={id => update('copPresetId', id)}
+                sideContent={copSideContent}
               />
-              {/* LOP */}
+              {/* LOP + 显示器 + 召唤盒 */}
               <ImageSelector
                 title="LOP（层站召唤盒）"
                 items={LOP_PRESETS}
                 selectedId={selections.lopPresetId}
                 onSelect={id => update('lopPresetId', id)}
+                sideContent={lopSideContent}
               />
-              {/* 显示器 */}
-              <SelectButton label="显示器" options={DISPLAY_OPTIONS} value={selections.display} onChange={v => update('display', v)} />
-              {/* 召唤盒 */}
-              <SelectButton label="召唤盒款式" options={CALLBOX_STYLE_OPTIONS} value={selections.callBoxStyle} onChange={v => update('callBoxStyle', v)} />
 
               <DecorationModuleFooter
                 remarks={selections.displayRemarks}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle, X, ZoomIn } from 'lucide-react'
 import {
   calculatePrice,
@@ -354,6 +354,121 @@ function DoorOpeningSelector({
 }
 
 // ============================================================
+// 可搜索下拉选择框
+// ============================================================
+function SearchableSelect({
+  options,
+  value,
+  onChange,
+  placeholder,
+}: {
+  options: { name: string; price: number }[]
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const [keyword, setKeyword] = useState('')
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  // 点击外部关闭
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setOpen(false)
+        setKeyword('')
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // 打开下拉时聚焦搜索框
+  const handleOpen = () => {
+    setOpen(true)
+    setKeyword('')
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  // 过滤选项（按中文名或英文名关键词匹配）
+  const filtered = keyword.trim()
+    ? options.filter(opt =>
+        opt.name.toLowerCase().includes(keyword.trim().toLowerCase())
+      )
+    : options
+
+  const handleSelect = (name: string) => {
+    onChange(name)
+    setOpen(false)
+    setKeyword('')
+  }
+
+  return (
+    <div ref={wrapperRef} className="relative flex-1 min-w-0">
+      {/* 触发按钮：显示当前选中值 */}
+      <button
+        type="button"
+        onClick={handleOpen}
+        className="w-full flex items-center justify-between px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 bg-white hover:border-gray-400 transition-colors text-left"
+      >
+        <span className="truncate text-gray-800">{value || placeholder || '请选择'}</span>
+        <ChevronDown
+          size={12}
+          className={`flex-shrink-0 ml-1 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* 下拉面板 */}
+      {open && (
+        <div className="absolute z-50 left-0 top-full mt-1 w-full min-w-[200px] bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+          {/* 搜索框 */}
+          <div className="p-2 border-b border-gray-100">
+            <input
+              ref={inputRef}
+              type="text"
+              value={keyword}
+              onChange={e => setKeyword(e.target.value)}
+              placeholder="输入关键词搜索..."
+              className="w-full px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:border-blue-500"
+            />
+          </div>
+
+          {/* 选项列表 */}
+          <div className="max-h-48 overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-3 text-xs text-gray-400 text-center">无匹配选项</div>
+            ) : (
+              filtered.map(opt => {
+                const selected = value === opt.name
+                return (
+                  <button
+                    key={opt.name}
+                    type="button"
+                    onClick={() => handleSelect(opt.name)}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 text-xs text-left transition-colors ${
+                      selected
+                        ? 'bg-blue-50 text-blue-700 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="truncate">{opt.name}</span>
+                    <span className={`flex-shrink-0 ml-2 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {opt.price > 0 ? `+¥${opt.price.toLocaleString()}` : opt.price < 0 ? `-¥${Math.abs(opt.price).toLocaleString()}` : ''}
+                      {selected && <Check size={10} className="inline ml-1" />}
+                    </span>
+                  </button>
+                )
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
 // 主页面
 // ============================================================
 export default function QuotationPage() {
@@ -447,17 +562,11 @@ export default function QuotationPage() {
         ].map(({ key, label, value }) => (
           <div key={key} className="flex items-center gap-1.5">
             <label className="text-xs font-semibold text-gray-600 w-14 flex-shrink-0">{label}</label>
-            <select
+            <SearchableSelect
+              options={wallOptions}
               value={value}
-              onChange={e => setWall(key, e.target.value)}
-              className="flex-1 min-w-0 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 bg-white"
-            >
-              {wallOptions.map(opt => (
-                <option key={opt.name} value={opt.name}>
-                  {opt.name} {opt.price > 0 ? `(+¥${opt.price})` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={v => setWall(key, v)}
+            />
           </div>
         ))}
       </div>

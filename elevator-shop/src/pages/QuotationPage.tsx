@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle, X, ZoomIn } from 'lucide-react'
+import { Calculator, Check, Settings, Zap, Shield, Truck, Star, ChevronDown, AlertTriangle, X, ZoomIn, Download } from 'lucide-react'
 import {
   calculatePrice,
   type QuoteSelections,
@@ -25,6 +25,7 @@ import {
   MACHINE_ROOM_OPTIONS,
   THROUGH_TYPE_OPTIONS,
 } from '../data/elevatorQuote'
+import { exportQuotationToExcel } from '../utils/exportQuotation'
 
 // ============================================================
 // 公共组件
@@ -514,6 +515,8 @@ export default function QuotationPage() {
   const [lopSubRemarks, setLopSubRemarks] = useState('')
   // 是否已由用户手动修改显示与召唤备注
   const [displayRemarksManualEdited, setDisplayRemarksManualEdited] = useState(false)
+  // 导出状态
+  const [exporting, setExporting] = useState(false)
 
   // 墙面/轿门下拉相关
   const wallOptions = DECORATION_MATERIALS.map(m => ({ name: m.name, nameEn: m.nameEn, price: m.price }))
@@ -1478,6 +1481,36 @@ export default function QuotationPage() {
 
             <div className="flex gap-3">
               <button onClick={() => setShowQuote(false)} className="flex-1 border border-gray-300 py-2.5 rounded-lg font-medium text-sm">关闭</button>
+              <button
+                disabled={exporting}
+                onClick={async () => {
+                  setExporting(true)
+                  try {
+                    await exportQuotationToExcel({
+                      projectName,
+                      selections,
+                      breakdown,
+                      cabinPreset,
+                      ceilingPreset,
+                      floorPreset,
+                      doorPreset,
+                      copPreset,
+                      lopPreset,
+                      copSubRemarks,
+                      lopSubRemarks,
+                    })
+                  } catch (err) {
+                    console.error('导出失败', err)
+                    alert('导出失败，请重试')
+                  } finally {
+                    setExporting(false)
+                  }
+                }}
+                className="flex-1 border border-green-600 text-green-700 hover:bg-green-50 py-2.5 rounded-lg font-medium text-sm flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download size={14} />
+                {exporting ? '导出中...' : '导出'}
+              </button>
               <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium text-sm">提交询价</button>
             </div>
           </div>

@@ -1172,21 +1172,65 @@ export default function QuotationPage() {
 
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="font-semibold text-gray-800 mb-2">轿厢</div>
-                <div className="text-sm space-y-1 text-gray-600">
-                  <div>款式：{cabinPreset?.level} {cabinPreset?.label.split('-').pop()}</div>
-                  <div>后壁：{wallBack}</div>
-                  <div>左侧壁：{wallLeft}</div>
-                  <div>右侧壁：{wallRight}</div>
-                  <div>前壁：{wallFront}</div>
-                  <div>轿门：{carDoor}</div>
-                  {cabinPreset && <div className="text-orange-600 font-medium">+¥{cabinPreset.price.toLocaleString()}</div>}
+                <div className="flex gap-3 items-start">
+                  <div className="text-sm space-y-1 text-gray-600 flex-1 min-w-0">
+                    <div>款式：{cabinPreset?.level} {cabinPreset?.label.split('-').pop()}</div>
+                    <div>后壁：{wallBack}</div>
+                    <div>左侧壁：{wallLeft}</div>
+                    <div>右侧壁：{wallRight}</div>
+                    <div>前壁：{wallFront}</div>
+                    <div>轿门：{carDoor}</div>
+                    {cabinPreset && <div className="text-orange-600 font-medium">+¥{cabinPreset.price.toLocaleString()}</div>}
+                  </div>
+                  {cabinPreset && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={cabinPreset.image}
+                        alt={cabinPreset.label}
+                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-sm"
+                        onError={e => {
+                          ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect fill='%23e5e7eb' width='96' height='96'/><text x='48' y='52' text-anchor='middle' fill='%239ca3af' font-size='9'>轿厢</text></svg>`
+                        }}
+                      />
+                      <div className="text-xs text-center text-gray-400 mt-1">{cabinPreset.label}</div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               <div className="p-3 bg-gray-50 rounded-lg">
-                <div className="text-sm space-y-1 text-gray-600">
-                  <div>吊顶：{ceilingPreset?.label}</div>
-                  <div>地板：{floorPreset?.label}</div>
+                <div className="font-semibold text-gray-800 mb-2">吊顶 / 地板</div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-600 flex-1">
+                      吊顶：{ceilingPreset?.label ?? <span className="text-gray-400">跟随轿厢默认</span>}
+                    </div>
+                    {ceilingPreset && (
+                      <img
+                        src={ceilingPreset.image}
+                        alt={ceilingPreset.label}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0"
+                        onError={e => {
+                          ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect fill='%23e5e7eb' width='64' height='64'/><text x='32' y='36' text-anchor='middle' fill='%239ca3af' font-size='9'>吊顶</text></svg>`
+                        }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm text-gray-600 flex-1">
+                      地板：{floorPreset?.label ?? <span className="text-gray-400">跟随轿厢默认</span>}
+                    </div>
+                    {floorPreset && (
+                      <img
+                        src={floorPreset.image}
+                        alt={floorPreset.label}
+                        className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm flex-shrink-0"
+                        onError={e => {
+                          ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect fill='%23e5e7eb' width='64' height='64'/><text x='32' y='36' text-anchor='middle' fill='%239ca3af' font-size='9'>地板</text></svg>`
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1194,12 +1238,25 @@ export default function QuotationPage() {
               {doorPreset && (
                 <div className="p-3 bg-gray-50 rounded-lg">
                   <div className="font-semibold text-gray-800 mb-2">门厅 - {doorPreset.label}</div>
-                  <div className="text-sm space-y-1 text-gray-600">
-                    <div>厅门(基站层)：{doorPreset.hallDoorBase}</div>
-                    <div>厅门(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.hallDoorOther}</div>
-                    <div>小门套(基站层)：{doorPreset.doorFrameBase}</div>
-                    <div>小门套(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.doorFrameOther}</div>
-                    <div className="text-orange-600 font-medium">+¥{doorPreset.price.toLocaleString()}</div>
+                  <div className="flex gap-3 items-start">
+                    <div className="text-sm space-y-1 text-gray-600 flex-1 min-w-0">
+                      <div>厅门(基站层)：{doorPreset.hallDoorBase}</div>
+                      <div>厅门(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.hallDoorOther}</div>
+                      <div>小门套(基站层)：{doorPreset.doorFrameBase}</div>
+                      <div>小门套(其余{Math.max(0, floorCount - 1)}层)：{doorPreset.doorFrameOther}</div>
+                      <div className="text-orange-600 font-medium">+¥{doorPreset.price.toLocaleString()}</div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <img
+                        src={doorPreset.image}
+                        alt={doorPreset.label}
+                        className="w-24 h-24 object-cover rounded-lg border border-gray-200 shadow-sm"
+                        onError={e => {
+                          ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='96'><rect fill='%23e5e7eb' width='96' height='96'/><text x='48' y='52' text-anchor='middle' fill='%239ca3af' font-size='9'>门厅</text></svg>`
+                        }}
+                      />
+                      <div className="text-xs text-center text-gray-400 mt-1">{doorPreset.label}</div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1237,12 +1294,51 @@ export default function QuotationPage() {
               {/* COP/LOP */}
               {(copPreset || lopPreset) && (
                 <div className="p-3 bg-gray-50 rounded-lg">
-                  <div className="font-semibold text-gray-800 mb-2">操作与召唤</div>
-                  <div className="text-sm space-y-1 text-gray-600">
-                    {copPreset && <div>COP：{copPreset.label}</div>}
-                    {lopPreset && <div>LOP：{lopPreset.label}</div>}
-                    <div>显示器：{selections.display}</div>
-                    <div>召唤盒：{selections.callBoxStyle}</div>
+                  <div className="font-semibold text-gray-800 mb-3">操作与召唤</div>
+                  <div className="space-y-3">
+                    {/* COP 行：文字 + 图片 */}
+                    {copPreset && (
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm text-gray-600 flex-1 min-w-0">
+                          <span className="font-medium text-gray-700">COP：</span>{copPreset.label}
+                        </div>
+                        <div className="flex-shrink-0 text-center">
+                          <img
+                            src={copPreset.image}
+                            alt={copPreset.label}
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
+                            onError={e => {
+                              ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect fill='%23e5e7eb' width='64' height='64'/><text x='32' y='36' text-anchor='middle' fill='%239ca3af' font-size='9'>COP</text></svg>`
+                            }}
+                          />
+                          <div className="text-xs text-gray-400 mt-0.5">{copPreset.label}</div>
+                        </div>
+                      </div>
+                    )}
+                    {/* LOP 行：文字 + 图片 */}
+                    {lopPreset && (
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm text-gray-600 flex-1 min-w-0">
+                          <span className="font-medium text-gray-700">LOP：</span>{lopPreset.label}
+                        </div>
+                        <div className="flex-shrink-0 text-center">
+                          <img
+                            src={lopPreset.image}
+                            alt={lopPreset.label}
+                            className="w-16 h-16 object-cover rounded-lg border border-gray-200 shadow-sm"
+                            onError={e => {
+                              ;(e.target as HTMLImageElement).src = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect fill='%23e5e7eb' width='64' height='64'/><text x='32' y='36' text-anchor='middle' fill='%239ca3af' font-size='9'>LOP</text></svg>`
+                            }}
+                          />
+                          <div className="text-xs text-gray-400 mt-0.5">{lopPreset.label}</div>
+                        </div>
+                      </div>
+                    )}
+                    {/* 显示器 & 召唤盒 */}
+                    <div className="border-t border-gray-200 pt-2 text-sm text-gray-600 space-y-1">
+                      <div><span className="font-medium text-gray-700">显示器：</span>{selections.display}</div>
+                      <div><span className="font-medium text-gray-700">召唤盒：</span>{selections.callBoxStyle}</div>
+                    </div>
                   </div>
                 </div>
               )}

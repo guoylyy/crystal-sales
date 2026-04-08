@@ -965,6 +965,21 @@ export default function QuotationPage() {
                 items={DOOR_PRESETS}
                 selectedId={selections.doorPresetId}
                 onSelect={id => update('doorPresetId', id)}
+                sideContent={
+                  <div>
+                    <div className="text-xs font-semibold text-gray-500 mb-2">门板材料</div>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <label className="text-xs font-semibold text-gray-600 w-14 flex-shrink-0">门板材料</label>
+                        <SearchableSelect
+                          options={wallOptions}
+                          value={selections.hallDoorMaterial}
+                          onChange={v => update('hallDoorMaterial', v)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                }
               />
 
               <DecorationModuleFooter

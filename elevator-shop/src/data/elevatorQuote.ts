@@ -457,6 +457,7 @@ export interface QuoteSelections {
 
   // 门厅（图片选择）
   doorPresetId: string       // 门厅预设
+  hallDoorMaterial: string   // 门板材料
   doorRemarks: string        // 门厅备注
   doorRefImages: string[]    // 门厅参考图片
 
@@ -622,6 +623,7 @@ export const DEFAULT_SELECTIONS: QuoteSelections = {
   wallFront: '201发纹',
   carDoor: '201发纹',
   doorPresetId: 'door-1',
+  hallDoorMaterial: '201发纹',
   doorRemarks: '',
   doorRefImages: [],
   display: '6.4寸蓝底白字',

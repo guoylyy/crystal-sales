@@ -234,9 +234,9 @@ function ImageSelector<T extends { id: string; image: string; label: string; pri
           )}
         </div>
 
-        {/* 右侧：额外内容（如配置选项），限制最大宽度避免过宽 */}
+        {/* 右侧：额外内容（如配置选项） */}
         {sideContent && (
-          <div className="flex-1 min-w-0" style={{ maxWidth: 260 }}>
+          <div className="flex-1 min-w-0">
             {sideContent}
           </div>
         )}

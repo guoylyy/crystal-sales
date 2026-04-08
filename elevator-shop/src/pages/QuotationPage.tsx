@@ -739,15 +739,43 @@ export default function QuotationPage() {
           ? COP_PRESETS.find(p => p.id === selections.copPresetId)?.label
           : '未选择'}
       </div>
-      <div className="mt-3">
-        <label className="block text-xs font-semibold text-gray-600 mb-1">COP备注</label>
-        <textarea
-          value={copSubRemarks}
-          onChange={e => handleCopSubRemarksChange(e.target.value)}
-          placeholder="COP备注..."
-          rows={2}
-          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
-        />
+      <div className="mt-3 space-y-3">
+        <div>
+          <div className="text-xs font-semibold text-gray-700 mb-1">显示器</div>
+          <div className="flex flex-wrap gap-1.5">
+            {DISPLAY_OPTIONS.map(opt => {
+              const selected = selections.display === opt.name
+              return (
+                <button
+                  key={opt.name}
+                  onClick={() => update('display', opt.name)}
+                  className={`px-2 py-1 rounded-lg border-2 text-xs font-medium transition-all ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-blue-700'
+                      : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                  }`}
+                >
+                  {opt.name}
+                  {opt.price !== 0 && (
+                    <span className={`ml-1 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                      {opt.price > 0 ? '+' : ''}¥{opt.price.toLocaleString()}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">COP备注</label>
+          <textarea
+            value={copSubRemarks}
+            onChange={e => handleCopSubRemarksChange(e.target.value)}
+            placeholder="COP备注..."
+            rows={2}
+            className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+          />
+        </div>
       </div>
     </div>
   )
@@ -766,7 +794,7 @@ export default function QuotationPage() {
         <div>
           <div className="text-xs font-semibold text-gray-700 mb-1">显示器</div>
           <div className="flex flex-wrap gap-1.5">
-            {DISPLAY_OPTIONS.map(opt => {
+            {DISPLAY_OPTIONS.filter(opt => ['4.3寸蓝底白字', '4.3寸黑底白字', '6.4寸蓝底白字', '6.4寸黑底白字', '6.4寸红色大点阵'].includes(opt.name)).map(opt => {
               const selected = selections.display === opt.name
               return (
                 <button

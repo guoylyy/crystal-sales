@@ -499,6 +499,7 @@ function SearchableSelect({
 // 主页面
 // ============================================================
 export default function QuotationPage() {
+  const [projectName, setProjectName] = useState('')
   const [selections, setSelections] = useState<QuoteSelections>(DEFAULT_SELECTIONS)
   const [showQuote, setShowQuote] = useState(false)
   const [showAllFloors, setShowAllFloors] = useState(false)
@@ -874,6 +875,17 @@ export default function QuotationPage() {
           {/* ========== 左侧配置区 ========== */}
           <div className="lg:col-span-2 space-y-5">
 
+            {/* 项目名称 */}
+            <SectionCard title="项目名称" icon={Star}>
+              <input
+                type="text"
+                value={projectName}
+                onChange={e => setProjectName(e.target.value)}
+                placeholder="请输入本项目名称（如：XX小区1号楼电梯项目）"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-blue-500"
+              />
+            </SectionCard>
+
             {/* 基础配置 */}
             <SectionCard title="基础配置" icon={Settings}>
               <SelectButton label="载重" options={LOAD_OPTIONS} value={selections.load} onChange={v => update('load', v)} />
@@ -1210,7 +1222,13 @@ export default function QuotationPage() {
       {showQuote && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">详细报价单</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-1">详细报价单</h2>
+            {projectName && (
+              <div className="text-base font-semibold text-blue-700 mb-4 pb-3 border-b border-blue-100">
+                项目名称：{projectName}
+              </div>
+            )}
+            {!projectName && <div className="mb-4" />}
 
             <div className="space-y-3 mb-6">
               <div className="p-3 bg-gray-50 rounded-lg">

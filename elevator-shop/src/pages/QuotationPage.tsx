@@ -767,7 +767,7 @@ export default function QuotationPage() {
           </div>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">COP备注</label>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">COP备注<span className="font-normal text-gray-400">（楼层内容请在此具体备注，例如 G,1-4）</span></label>
           <textarea
             value={copSubRemarks}
             onChange={e => handleCopSubRemarksChange(e.target.value)}

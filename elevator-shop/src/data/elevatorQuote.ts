@@ -429,6 +429,23 @@ export const HANDRAIL_OPTIONS: QuoteOption[] = [
 ]
 
 // ============================================================
+// 机房类型
+// ============================================================
+export const MACHINE_ROOM_OPTIONS: QuoteOption[] = [
+  { name: '有机房', nameEn: 'With Machine Room', price: 0 },
+  { name: '无机房', nameEn: 'Machine Room Less', price: 2000 },
+]
+
+// ============================================================
+// 贯通类型
+// ============================================================
+export const THROUGH_TYPE_OPTIONS: QuoteOption[] = [
+  { name: '无贯通',   nameEn: 'No Through',          price: 0 },
+  { name: '直角贯通', nameEn: 'Right Angle Through',  price: 8000 },
+  { name: '前后贯通', nameEn: 'Front Rear Through',   price: 3500 },
+]
+
+// ============================================================
 // 报价计算
 // ============================================================
 
@@ -442,6 +459,8 @@ export interface QuoteSelections {
   controller: string
   doorMachine: string
   doorOpening: string
+  machineRoom: string    // 机房类型
+  throughType: string    // 贯通类型
 
   // 轿厢（图片选择）
   cabinPresetId: string      // 轿厢风格预设
@@ -484,6 +503,8 @@ export interface PriceBreakdown {
   speedPrice: number
   floorPrice: number
   doorOpeningPrice: number
+  machineRoomPrice: number   // 机房类型加价
+  throughTypePrice: number   // 贯通类型加价
   cabinPresetPrice: number
   wallCarDoorAdjustment: number  // 四壁+轿门材料差价（用户修改后的材料费 - 预设材料费）
   ceilingPresetPrice: number
@@ -522,6 +543,12 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
   // 开门方式
   const doorOpt = DOOR_OPENING_OPTIONS.find(o => o.name === selections.doorOpening)
   const doorOpeningPrice = (doorOpt?.basePrice ?? 0) + (doorOpt?.perFloorPrice ?? 0) * Math.max(0, floorCount - 1)
+
+  // 机房类型
+  const machineRoomPrice = MACHINE_ROOM_OPTIONS.find(o => o.name === selections.machineRoom)?.price ?? 0
+
+  // 贯通类型
+  const throughTypePrice = THROUGH_TYPE_OPTIONS.find(o => o.name === selections.throughType)?.price ?? 0
 
   // 轿厢预设
   const cabinPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
@@ -576,7 +603,8 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
 
   const total =
     basePrice + loadPrice + speedPrice + floorPrice +
-    doorOpeningPrice + cabinPresetPrice + ceilingPresetPrice +
+    doorOpeningPrice + machineRoomPrice + throughTypePrice +
+    cabinPresetPrice + ceilingPresetPrice +
     floorPresetPrice + doorPresetPrice +
     displayPrice + optionalPrice
 
@@ -589,6 +617,8 @@ export function calculatePrice(selections: QuoteSelections): PriceBreakdown {
     speedPrice,
     floorPrice,
     doorOpeningPrice,
+    machineRoomPrice,
+    throughTypePrice,
     cabinPresetPrice,
     wallCarDoorAdjustment,
     ceilingPresetPrice,
@@ -612,6 +642,8 @@ export const DEFAULT_SELECTIONS: QuoteSelections = {
   controller: '默纳克',
   doorMachine: '宁波欧菱',
   doorOpening: '中分',
+  machineRoom: '有机房',
+  throughType: '无贯通',
   cabinPresetId: 'Basic-1',
   cabinRemarks: '',
   cabinRefImages: [],

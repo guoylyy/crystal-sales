@@ -22,6 +22,8 @@ import {
   OPTIONAL_ITEMS,
   DECORATION_MATERIALS,
   BASE_PRICE,
+  MACHINE_ROOM_OPTIONS,
+  THROUGH_TYPE_OPTIONS,
 } from '../data/elevatorQuote'
 
 // ============================================================
@@ -908,6 +910,58 @@ export default function QuotationPage() {
                   )}
                 </div>
               </div>
+
+              {/* 机房类型 */}
+              <div className="mt-4 mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">机房类型</h3>
+                <div className="flex flex-wrap gap-2">
+                  {MACHINE_ROOM_OPTIONS.map(opt => {
+                    const selected = selections.machineRoom === opt.name
+                    return (
+                      <button
+                        key={opt.name}
+                        onClick={() => update('machineRoom', opt.name)}
+                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          selected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                        }`}
+                      >
+                        <div className="text-xs">{opt.name}</div>
+                        {opt.price !== 0 && (
+                          <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                            {opt.price > 0 ? '+' : ''}¥{opt.price.toLocaleString()}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* 贯通类型 */}
+              <div className="mb-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">贯通类型</h3>
+                <div className="flex flex-wrap gap-2">
+                  {THROUGH_TYPE_OPTIONS.map(opt => {
+                    const selected = selections.throughType === opt.name
+                    return (
+                      <button
+                        key={opt.name}
+                        onClick={() => update('throughType', opt.name)}
+                        className={`px-3 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          selected ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                        }`}
+                      >
+                        <div className="text-xs">{opt.name}</div>
+                        {opt.price !== 0 && (
+                          <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>
+                            {opt.price > 0 ? '+' : ''}¥{opt.price.toLocaleString()}
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </SectionCard>
 
             {/* 品牌选择 */}
@@ -1116,6 +1170,8 @@ export default function QuotationPage() {
                 {breakdown.speedPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">速度</span><span className={breakdown.speedPrice > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.speedPrice > 0 ? '+' : ''}¥{breakdown.speedPrice.toLocaleString()}</span></div>}
                 {breakdown.floorPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">层站</span><span className={breakdown.floorPrice > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.floorPrice > 0 ? '+' : ''}¥{breakdown.floorPrice.toLocaleString()}</span></div>}
                 {breakdown.doorOpeningPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">开门方式</span><span className="text-orange-600">+¥{breakdown.doorOpeningPrice.toLocaleString()}</span></div>}
+                {breakdown.machineRoomPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">机房类型</span><span className="text-orange-600">+¥{breakdown.machineRoomPrice.toLocaleString()}</span></div>}
+                {breakdown.throughTypePrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">贯通类型</span><span className="text-orange-600">+¥{breakdown.throughTypePrice.toLocaleString()}</span></div>}
                 {breakdown.cabinPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">轿厢</span><span className="text-orange-600">+¥{breakdown.cabinPresetPrice.toLocaleString()}</span></div>}
                 {breakdown.wallCarDoorAdjustment !== 0 && <div className="flex justify-between"><span className="text-gray-400">墙板调整</span><span className={breakdown.wallCarDoorAdjustment > 0 ? 'text-orange-600' : 'text-green-600'}>{breakdown.wallCarDoorAdjustment > 0 ? '+' : ''}¥{breakdown.wallCarDoorAdjustment.toLocaleString()}</span></div>}
                 {breakdown.ceilingPresetPrice !== 0 && <div className="flex justify-between"><span className="text-gray-400">吊顶</span><span className="text-orange-600">+¥{breakdown.ceilingPresetPrice.toLocaleString()}</span></div>}
@@ -1167,6 +1223,8 @@ export default function QuotationPage() {
                   <div className="flex justify-between"><span>控制系统：</span><span>{selections.controller}</span></div>
                   <div className="flex justify-between"><span>门机：</span><span>{selections.doorMachine}</span></div>
                   <div className="flex justify-between"><span>开门方式：</span><span>{selections.doorOpening}{breakdown.doorOpeningPrice > 0 && ` (+¥${breakdown.doorOpeningPrice.toLocaleString()})`}</span></div>
+                  <div className="flex justify-between"><span>机房类型：</span><span>{selections.machineRoom}{breakdown.machineRoomPrice > 0 && ` (+¥${breakdown.machineRoomPrice.toLocaleString()})`}</span></div>
+                  <div className="flex justify-between"><span>贯通类型：</span><span>{selections.throughType}{breakdown.throughTypePrice > 0 && ` (+¥${breakdown.throughTypePrice.toLocaleString()})`}</span></div>
                 </div>
               </div>
 

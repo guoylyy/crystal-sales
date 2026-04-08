@@ -501,6 +501,16 @@ export default function QuotationPage() {
   const [showQuote, setShowQuote] = useState(false)
   const [showAllFloors, setShowAllFloors] = useState(false)
   const [cabinLevel, setCabinLevel] = useState<'普通' | '高级' | '豪华'>('普通')
+  // 款式备注与吊顶备注（小区域），独立管理后自动合并到轿厢备注
+  const [cabinStyleRemarks, setCabinStyleRemarks] = useState('')
+  const [ceilingSubRemarks, setCeilingSubRemarks] = useState('')
+  // 是否已由用户手动修改轿厢备注（手动修改后不再自动覆盖）
+  const [cabinRemarksManualEdited, setCabinRemarksManualEdited] = useState(false)
+  // COP备注与LOP备注（小区域），独立管理后自动合并到显示与召唤备注
+  const [copSubRemarks, setCopSubRemarks] = useState('')
+  const [lopSubRemarks, setLopSubRemarks] = useState('')
+  // 是否已由用户手动修改显示与召唤备注
+  const [displayRemarksManualEdited, setDisplayRemarksManualEdited] = useState(false)
 
   // 墙面/轿门下拉相关
   const wallOptions = DECORATION_MATERIALS.map(m => ({ name: m.name, nameEn: m.nameEn, price: m.price }))
@@ -565,6 +575,72 @@ export default function QuotationPage() {
     }
   }
 
+  // 根据三个子备注自动生成轿厢备注合并文本
+  const buildCombinedCabinRemarks = (styleRem: string, ceilingRem: string, floorRem: string) => {
+    const parts: string[] = []
+    if (styleRem.trim()) parts.push(`款式备注：${styleRem.trim()}`)
+    if (ceilingRem.trim()) parts.push(`吊顶备注：${ceilingRem.trim()}`)
+    if (floorRem.trim()) parts.push(`地板备注：${floorRem.trim()}`)
+    return parts.join('；')
+  }
+
+  // 子备注变更处理（同时更新子备注 state 和合并后的轿厢备注）
+  const handleCabinStyleRemarksChange = (v: string) => {
+    setCabinStyleRemarks(v)
+    if (!cabinRemarksManualEdited) {
+      update('cabinRemarks', buildCombinedCabinRemarks(v, ceilingSubRemarks, selections.floorRemarks ?? ''))
+    }
+  }
+
+  const handleCeilingSubRemarksChange = (v: string) => {
+    setCeilingSubRemarks(v)
+    if (!cabinRemarksManualEdited) {
+      update('cabinRemarks', buildCombinedCabinRemarks(cabinStyleRemarks, v, selections.floorRemarks ?? ''))
+    }
+  }
+
+  const handleFloorRemarksChange = (v: string) => {
+    update('floorRemarks' as any, v)
+    if (!cabinRemarksManualEdited) {
+      update('cabinRemarks', buildCombinedCabinRemarks(cabinStyleRemarks, ceilingSubRemarks, v))
+    }
+  }
+
+  // 轿厢备注手动修改：标记为已手动编辑
+  const handleCabinRemarksManualChange = (v: string) => {
+    setCabinRemarksManualEdited(true)
+    update('cabinRemarks', v)
+  }
+
+  // 根据COP/LOP子备注自动生成显示与召唤备注合并文本
+  const buildCombinedDisplayRemarks = (copRem: string, lopRem: string) => {
+    const parts: string[] = []
+    if (copRem.trim()) parts.push(`COP备注：${copRem.trim()}`)
+    if (lopRem.trim()) parts.push(`LOP备注：${lopRem.trim()}`)
+    return parts.join('；')
+  }
+
+  // COP/LOP子备注变更处理
+  const handleCopSubRemarksChange = (v: string) => {
+    setCopSubRemarks(v)
+    if (!displayRemarksManualEdited) {
+      update('displayRemarks', buildCombinedDisplayRemarks(v, lopSubRemarks))
+    }
+  }
+
+  const handleLopSubRemarksChange = (v: string) => {
+    setLopSubRemarks(v)
+    if (!displayRemarksManualEdited) {
+      update('displayRemarks', buildCombinedDisplayRemarks(copSubRemarks, v))
+    }
+  }
+
+  // 显示与召唤备注手动修改：标记为已手动编辑
+  const handleDisplayRemarksManualChange = (v: string) => {
+    setDisplayRemarksManualEdited(true)
+    update('displayRemarks', v)
+  }
+
   const cabinLevelPresets = CABIN_PRESETS.filter(p => p.level === cabinLevel)
   const cabinPreset = CABIN_PRESETS.find(p => p.id === selections.cabinPresetId)
   const ceilingPreset = CEILING_PRESETS.find(p => p.id === selections.ceilingPresetId)
@@ -595,6 +671,16 @@ export default function QuotationPage() {
           </div>
         ))}
       </div>
+      <div className="mt-3">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">款式备注</label>
+        <textarea
+          value={cabinStyleRemarks}
+          onChange={e => handleCabinStyleRemarksChange(e.target.value)}
+          placeholder="款式备注..."
+          rows={2}
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+        />
+      </div>
     </div>
   )
 
@@ -608,6 +694,16 @@ export default function QuotationPage() {
           : '跟随轿厢默认（不加价）'}
       </div>
       <div className="text-xs text-gray-400 mt-1">如需定制请选择，不选择则跟随轿厢默认</div>
+      <div className="mt-3">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">吊顶备注</label>
+        <textarea
+          value={ceilingSubRemarks}
+          onChange={e => handleCeilingSubRemarksChange(e.target.value)}
+          placeholder="吊顶备注..."
+          rows={2}
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+        />
+      </div>
     </div>
   )
 
@@ -625,7 +721,7 @@ export default function QuotationPage() {
         <label className="block text-xs font-semibold text-gray-600 mb-1">地板备注</label>
         <textarea
           value={selections.floorRemarks ?? ''}
-          onChange={e => update('floorRemarks' as any, e.target.value)}
+          onChange={e => handleFloorRemarksChange(e.target.value)}
           placeholder="地板备注..."
           rows={2}
           className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
@@ -642,6 +738,16 @@ export default function QuotationPage() {
         {selections.copPresetId
           ? COP_PRESETS.find(p => p.id === selections.copPresetId)?.label
           : '未选择'}
+      </div>
+      <div className="mt-3">
+        <label className="block text-xs font-semibold text-gray-600 mb-1">COP备注</label>
+        <textarea
+          value={copSubRemarks}
+          onChange={e => handleCopSubRemarksChange(e.target.value)}
+          placeholder="COP备注..."
+          rows={2}
+          className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+        />
       </div>
     </div>
   )
@@ -708,6 +814,16 @@ export default function QuotationPage() {
               )
             })}
           </div>
+        </div>
+        <div>
+          <label className="block text-xs font-semibold text-gray-600 mb-1">LOP备注</label>
+          <textarea
+            value={lopSubRemarks}
+            onChange={e => handleLopSubRemarksChange(e.target.value)}
+            placeholder="LOP备注..."
+            rows={2}
+            className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:border-blue-500 resize-none"
+          />
         </div>
       </div>
     </div>
@@ -836,7 +952,7 @@ export default function QuotationPage() {
               <DecorationModuleFooter
                 remarks={selections.cabinRemarks}
                 images={selections.cabinRefImages}
-                onRemarksChange={v => update('cabinRemarks', v)}
+                onRemarksChange={handleCabinRemarksManualChange}
                 onImagesChange={v => update('cabinRefImages', v)}
                 moduleName="轿厢"
               />
@@ -882,7 +998,7 @@ export default function QuotationPage() {
               <DecorationModuleFooter
                 remarks={selections.displayRemarks}
                 images={selections.displayRefImages}
-                onRemarksChange={v => update('displayRemarks', v)}
+                onRemarksChange={handleDisplayRemarksManualChange}
                 onImagesChange={v => update('displayRefImages', v)}
                 moduleName="显示与召唤"
               />
